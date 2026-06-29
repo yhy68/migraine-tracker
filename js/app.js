@@ -82,21 +82,59 @@ const App = (() => {
   let editingId = null;
 
   /* ---- Init ---- */
+  function updateThemeHint() {
+    const hint = document.getElementById('theme-mode-hint');
+    const autoBtn = document.getElementById('theme-auto-btn');
+    const toggleBtn = document.getElementById('theme-toggle-btn');
+    const isAuto = !localStorage.getItem('theme');
+    if (autoBtn) autoBtn.classList.toggle('active', isAuto);
+    if (toggleBtn) toggleBtn.classList.toggle('active', !isAuto);
+    if (!hint) return;
+    const pad = n => String(n).padStart(2, '0');
+    const now = new Date();
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    if (isAuto) {
+      const autoT = getAutoTheme() === 'dark' ? '深色' : '浅色';
+      hint.textContent = '当前：自动模式 ｜ ' + timeStr + ' 时为' + autoT;
+    } else {
+      const saved = localStorage.getItem('theme');
+      const label = saved === 'dark' ? '深色（手动）' : '浅色（手动）';
+      hint.textContent = '当前：' + label + ' ｜ 自动：按时间切换';
+    }
+  }
+
   function init() {
     initTheme();
     renderHeader();
     loadMainUI();
     tryAutoSync();
     switchTab('record');
+    updateThemeHint();
   }
   
   /* ---- Theme Management ---- */
+  function getAutoTheme() {
+    const h = new Date().getHours();
+    return (h >= 19 || h < 7) ? 'dark' : 'light';
+  }
+
   function initTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    applyTheme(savedTheme);
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      applyTheme(savedTheme, false);
+    } else {
+      applyTheme(getAutoTheme(), false);
+    }
+    setInterval(() => {
+      const currentTheme = localStorage.getItem('theme');
+      if (currentTheme !== 'light' && currentTheme !== 'dark') {
+        applyTheme(getAutoTheme(), false);
+      }
+    }, 60000);
   }
   
-  function applyTheme(theme) {
+  function applyTheme(theme, showToast) {
+    if (showToast === undefined) showToast = true;
     if (theme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
       document.body.setAttribute('data-theme', 'dark');
@@ -105,17 +143,32 @@ const App = (() => {
       document.body.removeAttribute('data-theme');
     }
     localStorage.setItem('theme', theme);
+    if (showToast) {
+      showToast(`已切换到${theme === 'dark' ? '深色' : '浅色'}模式`, 'success');
+    }
+    updateThemeHint();
   }
   
   function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    applyTheme(newTheme);
-    showToast(`已切换到${newTheme === 'dark' ? '深色' : '浅色'}模式`, 'success');
+    applyTheme(newTheme, true);
+  }
+
+  function resetThemeToAuto() {
+    localStorage.removeItem('theme');
+    applyTheme(getAutoTheme(), true);
+    showToast('已恢复自动模式（按时间切换）', 'success');
   }
 
   /* ---- Auto Sync ---- */
   async function tryAutoSync() {
+    const autoSync = localStorage.getItem('auto_sync') !== '0';
+    if (!autoSync) {
+      const lastSt = localStorage.getItem('lastSyncStatus') || 'idle';
+      updateSyncStatus(lastSt);
+      return;
+    }
     updateSyncStatus('syncing');
     try {
       await Storage.syncData();
@@ -123,7 +176,6 @@ const App = (() => {
     } catch (e) {
       console.error('Sync failed:', e);
       updateSyncStatus('error');
-      showToast('同步失败: ' + e.message, 'error');
     }
   }
 
@@ -135,9 +187,27 @@ const App = (() => {
     const msgs = {
       synced: '已同步',
       syncing: '同步中...',
-      error: '同步失败'
+      error: '同步失败',
+      idle: '未同步'
     };
-    text.textContent = msgs[status] || status;
+    let label = msgs[status] || status;
+
+    /* 保存/读取最近一次同步时间 */
+    if (status === 'synced') {
+      localStorage.setItem('lastSyncTime', Date.now().toString());
+      localStorage.setItem('lastSyncStatus', 'synced');
+    }
+    if (status === 'error') {
+      localStorage.setItem('lastSyncStatus', 'error');
+    }
+    const lastTs = localStorage.getItem('lastSyncTime');
+    if (lastTs && status !== 'idle') {
+      const d = new Date(parseInt(lastTs, 10));
+      const pad = n => String(n).padStart(2, '0');
+      const timeStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      label += '（' + timeStr + '）';
+    }
+    text.textContent = label;
   }
 
   /* ---- Main UI ---- */
@@ -146,9 +216,9 @@ const App = (() => {
     app.innerHTML = `
       ${renderPrivacyBanner()}
       <div class="tab-nav">
-        <button class="tab-btn active" data-tab="record" onclick="App.switchTab('record')">记录发作</button>
-        <button class="tab-btn" data-tab="history" onclick="App.switchTab('history')">历史记录</button>
-        <button class="tab-btn" data-tab="backup" onclick="App.switchTab('backup')">备份与设置</button>
+        <button class="tab-btn active" data-tab="record" onclick="App.switchTab('record')">记录</button>
+        <button class="tab-btn" data-tab="history" onclick="App.switchTab('history')">历史</button>
+        <button class="tab-btn" data-tab="backup" onclick="App.switchTab('backup')">设置</button>
       </div>
       <div id="tab-content"></div>
     `;
@@ -190,24 +260,39 @@ const App = (() => {
   }
 
   /* ---- Record Form ---- */
+  function splitDateTime(date) {
+    const pad = n => String(n).padStart(2, '0');
+    return {
+      date: `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`,
+      time: `${pad(date.getHours())}:${pad(date.getMinutes())}`
+    };
+  }
+
   function renderRecordForm(container) {
     const now = new Date();
-    const isoNow = toDateTimeLocal(now);
-    const isoOneHourLater = toDateTimeLocal(new Date(now.getTime() + 3600000));
+    const start = splitDateTime(now);
+    const end = splitDateTime(new Date(now.getTime() + 3600000));
 
     container.innerHTML = `
       <div class="card">
         <div class="section-title">
-          <svg width="28" height="24" viewBox="0 0 28 24"><ellipse cx="8" cy="16" rx="7" ry="5" fill="white" stroke="#B8DDF0" stroke-width="1"/><ellipse cx="18" cy="14" rx="7" ry="5" fill="white" stroke="#B8DDF0" stroke-width="1"/><ellipse cx="13" cy="11" rx="10" ry="8" fill="white" stroke="#B8DDF0" stroke-width="1"/><circle cx="10" cy="10" r="1.5" fill="#5BA4CF"/><circle cx="15" cy="10" r="1.5" fill="#5BA4CF"/><ellipse cx="12.5" cy="14" rx="2" ry="1.3" fill="#F2A5B5"/></svg>
-          ${editingId ? '编辑记录' : '记录发作'}
+          ${editingId ? '编辑记录' : '新记录'}
         </div>
 
         <div class="form-group">
           <label class="form-label">发作时间</label>
           <div class="datetime-row">
-            <input type="datetime-local" id="rec-start" value="${isoNow}" step="60">
-            <span class="datetime-separator">至</span>
-            <input type="datetime-local" id="rec-end" value="${isoOneHourLater}" step="60">
+            <div class="datetime-field">
+              <span class="datetime-label">开始时间</span>
+              <input type="date" id="rec-start-date" value="${start.date}">
+              <input type="time" id="rec-start-time" value="${start.time}" step="60">
+            </div>
+            <span class="datetime-separator">—</span>
+            <div class="datetime-field">
+              <span class="datetime-label">结束时间 <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">（可选）</span></span>
+              <input type="date" id="rec-end-date" value="${end.date}">
+              <input type="time" id="rec-end-time" value="${end.time}" step="60">
+            </div>
           </div>
         </div>
 
@@ -370,8 +455,18 @@ const App = (() => {
     const r = records.find(rec => rec.id === id);
     if (!r) return;
 
-    document.getElementById('rec-start').value = r.startTime ? toDateTimeLocal(new Date(r.startTime)) : '';
-    document.getElementById('rec-end').value = r.endTime ? toDateTimeLocal(new Date(r.endTime)) : '';
+    if (r.startTime) {
+      const sd = new Date(r.startTime);
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('rec-start-date').value = `${sd.getFullYear()}-${pad(sd.getMonth()+1)}-${pad(sd.getDate())}`;
+      document.getElementById('rec-start-time').value = `${pad(sd.getHours())}:${pad(sd.getMinutes())}`;
+    }
+    if (r.endTime) {
+      const ed = new Date(r.endTime);
+      const pad = n => String(n).padStart(2, '0');
+      document.getElementById('rec-end-date').value = `${ed.getFullYear()}-${pad(ed.getMonth()+1)}-${pad(ed.getDate())}`;
+      document.getElementById('rec-end-time').value = `${pad(ed.getHours())}:${pad(ed.getMinutes())}`;
+    }
 
     if (r.painLevel) {
       const btn = document.querySelector(`.pain-btn[data-level="${r.painLevel}"]`);
@@ -443,9 +538,20 @@ const App = (() => {
   }
 
   /* ---- Submit Record ---- */
+  function getStartDateTime() {
+    const d = document.getElementById('rec-start-date').value;
+    const t = document.getElementById('rec-start-time').value;
+    return (d && t) ? d + 'T' + t : '';
+  }
+  function getEndDateTime() {
+    const d = document.getElementById('rec-end-date').value;
+    const t = document.getElementById('rec-end-time').value;
+    return (d && t) ? d + 'T' + t : '';
+  }
+
   async function submitRecord() {
-    const startTime = document.getElementById('rec-start').value;
-    const endTime = document.getElementById('rec-end').value;
+    const startTime = getStartDateTime();
+    const endTime = getEndDateTime();
     const painBtn = document.querySelector('.pain-btn.selected');
     const notes = document.getElementById('rec-notes').value.trim();
 
@@ -540,35 +646,237 @@ const App = (() => {
   }
 
   /* ---- History ---- */
+  /* ---- History Filter & Pagination State ---- */
+  let histFilterType = 'all';  // 'all' | '7' | '30' | '90' | 'custom'
+  let histCustomStart = '';
+  let histCustomEnd = '';
+  let histSearch = '';
+  let histPage = 1;
+  let histPageSize = 5;  // 5 | 10 | 20 | 50 | 'all'
+  let filteredRecords = [];
+
   function renderHistory(container) {
-    const records = Storage.getLocalRecords().sort((a, b) =>
+    const allRecords = Storage.getLocalRecords().sort((a, b) =>
       new Date(b.startTime) - new Date(a.startTime)
     );
+    filteredRecords = applyFilterAndSearch(allRecords);
+    histPage = 1;
 
     container.innerHTML = `
       <div class="card">
         <div class="section-title">
-          <svg width="22" height="20" viewBox="0 0 22 20"><ellipse cx="6" cy="13" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="14" cy="12" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="10" cy="9" rx="8" ry="6" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><circle cx="7" cy="8" r="1.2" fill="#5BA4CF"/><circle cx="12" cy="8" r="1.2" fill="#5BA4CF"/><ellipse cx="9.5" cy="11" rx="1.5" ry="1" fill="#F2A5B5"/></svg>
           历史记录
         </div>
-        <div class="history-controls">
-          <select id="hist-filter" onchange="App.applyHistoryFilter()">
-            <option value="all">全部记录</option>
-            <option value="7">最近7天</option>
-            <option value="30">最近30天</option>
-            <option value="90">最近90天</option>
-          </select>
-          <input type="text" id="hist-search" placeholder="搜索备注..." oninput="App.applyHistoryFilter()" autocomplete="off">
-          <span class="history-count" id="hist-count">${records.length} 条记录</span>
+
+        <!-- Filter chips -->
+        <div class="filter-chips" id="filter-chips">
+          <button class="filter-chip ${histFilterType==='all'?'active':''}" data-value="all" onclick="App.setFilter('all')">全部</button>
+          <button class="filter-chip ${histFilterType==='7'?'active':''}" data-value="7" onclick="App.setFilter('7')">最近7天</button>
+          <button class="filter-chip ${histFilterType==='30'?'active':''}" data-value="30" onclick="App.setFilter('30')">最近30天</button>
+          <button class="filter-chip ${histFilterType==='90'?'active':''}" data-value="90" onclick="App.setFilter('90')">最近90天</button>
+          <button class="filter-chip ${histFilterType==='custom'?'active':''}" data-value="custom" onclick="App.toggleCustomRange()">自定义范围</button>
         </div>
-        <div id="history-list">${renderHistoryList(records)}</div>
+
+        <!-- Custom date range -->
+        <div class="custom-range-row" id="custom-range-row" style="display:${histFilterType==='custom'?'flex':'none'};">
+          <input type="date" id="range-start" value="${histCustomStart}">
+          <span class="range-separator">至</span>
+          <input type="date" id="range-end" value="${histCustomEnd}">
+          <button class="btn btn-sm btn-secondary" onclick="App.applyCustomRange()">确定</button>
+        </div>
+
+        <!-- Toolbar: search + page size + count -->
+        <div class="history-toolbar">
+          <input type="text" id="hist-search" placeholder="搜索备注..." oninput="App.onHistorySearch()" autocomplete="off" value="${histSearch}">
+          <div class="page-size-selector">
+            <span class="page-size-label">每页</span>
+            <select id="page-size-select" onchange="App.changePageSize()">
+              <option value="5" ${histPageSize===5?'selected':''}>5条</option>
+              <option value="10" ${histPageSize===10?'selected':''}>10条</option>
+              <option value="20" ${histPageSize===20?'selected':''}>20条</option>
+              <option value="50" ${histPageSize===50?'selected':''}>50条</option>
+              <option value="all" ${histPageSize==='all'?'selected':''}>全部</option>
+            </select>
+          </div>
+          <span class="history-count" id="hist-count">${filteredRecords.length} 条记录</span>
+        </div>
+
+        <div id="history-list"></div>
+        <div class="pagination-wrap" id="pagination-wrap">
+          <div class="pagination" id="pagination"></div>
+        </div>
       </div>
     `;
+    renderHistoryPage();
   }
+
+  function setFilter(type) {
+    histFilterType = type;
+    histPage = 1;
+    document.querySelectorAll('#filter-chips .filter-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === type);
+    });
+    const rangeRow = document.getElementById('custom-range-row');
+    if (rangeRow) rangeRow.style.display = type === 'custom' ? 'flex' : 'none';
+    refreshHistoryList();
+  }
+
+  function toggleCustomRange() {
+    const rangeRow = document.getElementById('custom-range-row');
+    if (!rangeRow) return;
+    if (rangeRow.style.display === 'none') {
+      rangeRow.style.display = 'flex';
+      histFilterType = 'custom';
+      document.querySelectorAll('#filter-chips .filter-chip').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === 'custom');
+      });
+    } else {
+      rangeRow.style.display = 'none';
+      if (!histCustomStart && !histCustomEnd) {
+        setFilter('all');
+      }
+    }
+  }
+
+  function applyCustomRange() {
+    const start = document.getElementById('range-start').value;
+    const end = document.getElementById('range-end').value;
+    if (!start || !end) {
+      showToast('请选择开始和结束日期', 'info');
+      return;
+    }
+    histCustomStart = start;
+    histCustomEnd = end;
+    histFilterType = 'custom';
+    histPage = 1;
+    document.querySelectorAll('#filter-chips .filter-chip').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.value === 'custom');
+    });
+    const rangeRow = document.getElementById('custom-range-row');
+    if (rangeRow) rangeRow.style.display = 'flex';
+    refreshHistoryList();
+  }
+
+  function onHistorySearch() {
+    histSearch = (document.getElementById('hist-search').value || '').toLowerCase();
+    histPage = 1;
+    refreshHistoryList();
+  }
+
+  function changePageSize() {
+    const val = document.getElementById('page-size-select').value;
+    histPageSize = val === 'all' ? 'all' : parseInt(val);
+    histPage = 1;
+    refreshHistoryList();
+  }
+
+  function refreshHistoryList() {
+    const allRecords = Storage.getLocalRecords();
+    filteredRecords = applyFilterAndSearch(allRecords);
+    const countEl = document.getElementById('hist-count');
+    if (countEl) countEl.textContent = `${filteredRecords.length} 条记录`;
+    const totalPages = histPageSize === 'all' ? 1 : Math.max(1, Math.ceil(filteredRecords.length / histPageSize));
+    if (histPage > totalPages) histPage = totalPages;
+    const wrap = document.getElementById('pagination-wrap');
+    if (wrap) wrap.style.display = totalPages > 1 ? '' : 'none';
+    renderHistoryPage();
+  }
+
+  function applyFilterAndSearch(records) {
+    let result = [...records];
+    if (histFilterType === 'custom') {
+      if (histCustomStart) {
+        const start = new Date(histCustomStart);
+        start.setHours(0, 0, 0, 0);
+        result = result.filter(r => new Date(r.startTime) >= start);
+      }
+      if (histCustomEnd) {
+        const end = new Date(histCustomEnd);
+        end.setHours(23, 59, 59, 999);
+        result = result.filter(r => new Date(r.startTime) <= end);
+      }
+    } else if (histFilterType !== 'all') {
+      const days = parseInt(histFilterType);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      cutoff.setHours(0, 0, 0, 0);
+      result = result.filter(r => new Date(r.startTime) >= cutoff);
+    }
+    if (histSearch) {
+      result = result.filter(r => (r.notes || '').toLowerCase().includes(histSearch));
+    }
+    result.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
+    return result;
+  }
+
+  function renderHistoryPage() {
+    let pageRecords;
+    if (histPageSize === 'all') {
+      pageRecords = filteredRecords;
+    } else {
+      const start = (histPage - 1) * histPageSize;
+      pageRecords = filteredRecords.slice(start, start + histPageSize);
+    }
+
+    const listEl = document.getElementById('history-list');
+    if (listEl) listEl.innerHTML = renderHistoryList(pageRecords);
+
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const el = document.getElementById('pagination');
+    if (!el) return;
+
+    if (histPageSize === 'all') { el.innerHTML = ''; return; }
+
+    const totalPages = Math.max(1, Math.ceil(filteredRecords.length / histPageSize));
+    if (totalPages <= 1) { el.innerHTML = ''; return; }
+
+    let html = '';
+    html += `<button class="page-btn ${histPage===1?'disabled':''}" onclick="App.goToPage(${histPage-1})" ${histPage===1?'disabled':''}>‹</button>`;
+
+    const pages = getPageNumbers(histPage, totalPages);
+    pages.forEach(p => {
+      if (p === '...') {
+        html += `<span class="page-dots">...</span>`;
+      } else {
+        html += `<button class="page-btn ${p===histPage?'current':''}" onclick="App.goToPage(${p})">${p}</button>`;
+      }
+    });
+
+    html += `<button class="page-btn ${histPage>=totalPages?'disabled':''}" onclick="App.goToPage(${histPage+1})" ${histPage>=totalPages?'disabled':''}>›</button>`;
+
+    el.innerHTML = html;
+  }
+
+  function getPageNumbers(current, total) {
+    if (total <= 7) {
+      return Array.from({length: total}, (_, i) => i + 1);
+    }
+    const pages = [1];
+    if (current > 3) pages.push('...');
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+    return [...new Set(pages)];
+  }
+
+  function goToPage(page) {
+    const totalPages = histPageSize === 'all' ? 1 : Math.ceil(filteredRecords.length / histPageSize);
+    if (page < 1 || page > totalPages) return;
+    histPage = page;
+    renderHistoryPage();
+    const list = document.getElementById('history-list');
+    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
 
   function renderHistoryList(records) {
     if (records.length === 0) {
-      return `<div class="empty-state"><span class="empty-icon">&#x1F4CB;</span><p>还没有记录</p><p style="font-size:12px;">切换到"记录发作"页面开始记录</p></div>`;
+      return `<div class="empty-state"><span class="empty-icon">&#x1F4CB;</span><p>还没有记录</p><p style="font-size:12px;">切换到「记录」页面开始记录</p></div>`;
     }
 
     return records.map(r => `
@@ -607,26 +915,33 @@ const App = (() => {
     card.classList.toggle('expanded');
   }
 
+  /* Legacy alias - kept for backward compat */
   function applyHistoryFilter() {
-    const filter = document.getElementById('hist-filter').value;
-    const search = (document.getElementById('hist-search').value || '').toLowerCase();
+    const filterEl = document.getElementById('hist-filter-dropdown');
+    if (filterEl) {
+      // New dropdown-based UI: use selectFilter + onHistorySearch
+      if (!histFilter) histFilter = 'all';
+      onHistorySearch();
+      return;
+    }
+    // Fallback for old select element
+    const filter = document.getElementById('hist-filter');
+    const search = document.getElementById('hist-search');
     let records = Storage.getLocalRecords();
-
-    if (filter !== 'all') {
-      const days = parseInt(filter);
+    if (filter && filter.value !== 'all') {
+      const days = parseInt(filter.value);
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
       records = records.filter(r => new Date(r.startTime) >= cutoff);
     }
-
-    if (search) {
-      records = records.filter(r => (r.notes || '').toLowerCase().includes(search));
+    if (search && search.value) {
+      records = records.filter(r => (r.notes || '').toLowerCase().includes(search.value.toLowerCase()));
     }
-
     records.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-
-    document.getElementById('history-list').innerHTML = renderHistoryList(records);
-    document.getElementById('hist-count').textContent = records.length + ' 条记录';
+    const listEl = document.getElementById('history-list');
+    const countEl = document.getElementById('hist-count');
+    if (listEl) listEl.innerHTML = renderHistoryList(records);
+    if (countEl) countEl.textContent = records.length + ' 条记录';
   }
 
   function editRecord(id) {
@@ -638,7 +953,11 @@ const App = (() => {
     if (confirm('确定要删除这条记录吗？此操作不可撤销。')) {
       Storage.deleteRecord(id);
       showToast('记录已删除', 'success');
-      applyHistoryFilter();
+      if (typeof refreshHistoryList === 'function') {
+        refreshHistoryList();
+      } else {
+        applyHistoryFilter();
+      }
     }
   }
 
@@ -648,7 +967,6 @@ const App = (() => {
     container.innerHTML = `
       <div class="card backup-section">
         <div class="section-title">
-          <svg width="22" height="20" viewBox="0 0 22 20"><ellipse cx="6" cy="13" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="14" cy="12" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="10" cy="9" rx="8" ry="6" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><circle cx="7" cy="8" r="1.2" fill="#5BA4CF"/><circle cx="12" cy="8" r="1.2" fill="#5BA4CF"/><ellipse cx="9.5" cy="11" rx="1.5" ry="1" fill="#F2A5B5"/></svg>
           数据备份
         </div>
         <p>当前共有 <strong>${count}</strong> 条记录。导出的 JSON 文件可跨设备导入，也可作为安全备份。</p>
@@ -662,27 +980,35 @@ const App = (() => {
 
       <div class="card backup-section">
         <div class="section-title">
-          <svg width="22" height="20" viewBox="0 0 22 20"><ellipse cx="6" cy="13" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="14" cy="12" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="10" cy="9" rx="8" ry="6" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><circle cx="7" cy="8" r="1.2" fill="#5BA4CF"/><circle cx="12" cy="8" r="1.2" fill="#5BA4CF"/><ellipse cx="9.5" cy="11" rx="1.5" ry="1" fill="#F2A5B5"/></svg>
           手动同步
         </div>
         <p>将本地记录与 GitHub 私有仓库同步。</p>
-        <div class="backup-actions">
+        <div class="backup-actions" style="align-items: center;">
           <button class="btn btn-secondary" style="width:auto" id="btn-sync" onclick="App.manualSync()">立即同步</button>
+          <div class="sync-indicator" style="font-size:13px;color:var(--text-secondary);">
+            <span id="sync-dot" class="dot"></span>
+            <span id="sync-text">未同步</span>
+          </div>
         </div>
       </div>
 
       <div class="card backup-section">
         <div class="section-title">
-          <svg width="22" height="20" viewBox="0 0 22 20"><ellipse cx="6" cy="13" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="14" cy="12" rx="6" ry="4" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><ellipse cx="10" cy="9" rx="8" ry="6" fill="white" stroke="#B8DDF0" stroke-width="0.8"/><circle cx="7" cy="8" r="1.2" fill="#5BA4CF"/><circle cx="12" cy="8" r="1.2" fill="#5BA4CF"/><ellipse cx="9.5" cy="11" rx="1.5" ry="1" fill="#F2A5B5"/></svg>
           设置
         </div>
         <div class="settings-section">
           <div class="settings-item">
-            <label>🌙 深色模式</label>
-            <button class="btn btn-sm btn-secondary" onclick="App.toggleTheme()">
-              切换主题
-            </button>
+            <label>主题模式</label>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="btn btn-sm btn-secondary" onclick="App.toggleTheme()" id="theme-toggle-btn">
+                切换主题
+              </button>
+              <button class="btn btn-sm btn-outline" onclick="App.resetThemeToAuto()" style="font-size:12px;flex:1;min-width:0;" id="theme-auto-btn">
+                自动
+              </button>
+            </div>
           </div>
+          <div id="theme-mode-hint" style="font-size:12px;color:var(--text-muted);margin-top:-4px;margin-bottom:8px;"></div>
           <div class="settings-item">
             <label>自动同步（保存后同步到 GitHub）</label>
             <label class="toggle">
@@ -695,11 +1021,15 @@ const App = (() => {
             <button class="btn btn-sm btn-secondary" onclick="localStorage.removeItem('privacy_dismissed');location.reload()">重新显示</button>
           </div>
         </div>
-        <div style="font-size:12px;color:var(--text-secondary);margin-top:12px;">
+        <div style="font-size:12px;color:var(--text-muted);margin-top:12px;">
           数据仓库: yhy68/migraine-data
         </div>
       </div>
     `;
+    /* 初始化同步状态显示 */
+    const lastSt = localStorage.getItem('lastSyncStatus') || 'idle';
+    updateSyncStatus(lastSt);
+    updateThemeHint();
   }
 
   async function manualSync() {
@@ -745,19 +1075,25 @@ const App = (() => {
   function renderHeader() {
     const header = document.getElementById('header');
     header.innerHTML = `
-      <svg class="mascot-icon" width="80" height="72" viewBox="0 0 80 72" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="22" cy="48" rx="16" ry="11" fill="white" stroke="#B8DDF0" stroke-width="1.2"/>
-        <ellipse cx="40" cy="40" rx="22" ry="16" fill="white" stroke="#B8DDF0" stroke-width="1.5"/>
-        <ellipse cx="58" cy="46" rx="16" ry="11" fill="white" stroke="#B8DDF0" stroke-width="1.2"/>
-        <circle cx="32" cy="40" r="3.5" fill="#5BA4CF"/>
-        <circle cx="48" cy="40" r="3.5" fill="#5BA4CF"/>
-        <circle cx="33" cy="39" r="1.2" fill="white"/>
-        <circle cx="49" cy="39" r="1.2" fill="white"/>
-        <ellipse cx="40" cy="47" rx="5" ry="3.5" fill="#F2A5B5"/>
-        <path d="M36 51 Q40 55 44 51" fill="none" stroke="#5BA4CF" stroke-width="1" stroke-linecap="round"/>
+      <svg class="mascot-icon" width="100" height="80" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+        <!-- sparkles -->
+        <path d="M12 30 L6 24 M8 28 L4 22" stroke="#B8DDF0" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M88 30 L94 24 M92 28 L96 22" stroke="#B8DDF0" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- cloud body -->
+        <path d="M26 60 Q18 60 16 52 Q14 42 24 38 Q24 26 38 24 Q46 16 58 20 Q70 14 78 24 Q90 26 88 38 Q96 44 88 54 Q86 62 76 62 Z" fill="white" stroke="#A8D4F0" stroke-width="1.8"/>
+        <!-- eyes -->
+        <circle cx="40" cy="45" r="3.5" fill="#333"/>
+        <circle cx="61" cy="45" r="3.5" fill="#333"/>
+        <circle cx="41" cy="43.5" r="1.2" fill="white"/>
+        <circle cx="62" cy="43.5" r="1.2" fill="white"/>
+        <!-- blush -->
+        <ellipse cx="32" cy="51" rx="6" ry="4" fill="#FFB366" opacity="0.65"/>
+        <ellipse cx="69" cy="51" rx="6" ry="4" fill="#FFB366" opacity="0.65"/>
+        <!-- smile -->
+        <path d="M47 50 Q50.5 55 54 50" fill="none" stroke="#333" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
-      <h1>偏头痛记录</h1>
-      <div class="subtitle">追踪每一次发作，找到你的规律</div>
+      <h1>小云私の手账</h1>
+      <div class="subtitle">记录每一天，温柔对待自己</div>
       <div class="sync-indicator">
         <span class="dot" id="sync-dot"></span>
         <span id="sync-text">已配置</span>
@@ -782,11 +1118,6 @@ const App = (() => {
   }
 
   /* ---- Utilities ---- */
-  function toDateTimeLocal(date) {
-    const pad = n => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-
   function formatDate(isoString) {
     const d = new Date(isoString);
     const now = new Date();
@@ -863,7 +1194,12 @@ const App = (() => {
     cancelEdit,
     editRecord,
     confirmDelete,
-    applyHistoryFilter,
+    setFilter,
+    toggleCustomRange,
+    applyCustomRange,
+    changePageSize,
+    onHistorySearch,
+    goToPage,
     toggleRecordDetail,
     handleImport,
     manualSync,
