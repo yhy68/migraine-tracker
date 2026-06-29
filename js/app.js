@@ -168,7 +168,15 @@ const App = (() => {
     } else {
       /* 当前是手动模式 → 切换回自动模式 */
       localStorage.removeItem('theme');
-      applyTheme(getAutoTheme(), true);
+      /* 直接应用自动检测的主题，不写入 localStorage（保持自动状态） */
+      const autoTheme = getAutoTheme();
+      if (autoTheme === 'dark') {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        document.body.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        document.body.removeAttribute('data-theme');
+      }
       showToast('已恢复自动模式（按时间切换）', 'success');
     }
     updateThemeHint();
@@ -197,11 +205,17 @@ const App = (() => {
     const text = document.querySelector('#sync-text');
     if (!dot || !text) return;
     dot.className = 'dot ' + status;
+
+    /* idle 状态不显示文字，只保留圆点 */
+    if (status === 'idle') {
+      text.textContent = '';
+      return;
+    }
+
     const msgs = {
       synced: '已同步',
       syncing: '同步中...',
-      error: '同步失败',
-      idle: '未同步'
+      error: '同步失败'
     };
     let label = msgs[status] || status;
 
