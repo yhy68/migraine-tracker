@@ -192,13 +192,12 @@ const App = (() => {
     };
     let label = msgs[status] || status;
 
-    /* 保存/读取最近一次同步时间 */
+    /* 保存状态到 localStorage */
+    localStorage.setItem('lastSyncStatus', status);
+
+    /* 保存最近一次成功同步时间 */
     if (status === 'synced') {
       localStorage.setItem('lastSyncTime', Date.now().toString());
-      localStorage.setItem('lastSyncStatus', 'synced');
-    }
-    if (status === 'error') {
-      localStorage.setItem('lastSyncStatus', 'error');
     }
     const lastTs = localStorage.getItem('lastSyncTime');
     if (lastTs && status !== 'idle') {
@@ -1034,6 +1033,8 @@ const App = (() => {
     `;
     /* 初始化同步状态显示 */
     const lastSt = localStorage.getItem('lastSyncStatus') || 'idle';
+    // 如果从未同步过且有本地数据，显示为 idle（未同步）
+    // 如果之前成功过，保持上次状态
     updateSyncStatus(lastSt);
     updateThemeHint();
   }
