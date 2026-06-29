@@ -1017,10 +1017,6 @@ const App = (() => {
         <p>将本地记录与 GitHub 私有仓库同步。</p>
         <div class="backup-actions" style="align-items: center;">
           <button class="btn btn-secondary" style="width:auto" id="btn-sync" onclick="App.manualSync()">立即同步</button>
-          <div class="sync-indicator" style="font-size:13px;color:var(--text-secondary);">
-            <span id="sync-dot" class="dot"></span>
-            <span id="sync-text">未同步</span>
-          </div>
         </div>
       </div>
 
@@ -1128,10 +1124,6 @@ const App = (() => {
       </svg>
       <h1>小云私の手账</h1>
       <div class="subtitle">记录每一天，温柔对待自己</div>
-      <div class="sync-indicator">
-        <span class="dot" id="sync-dot"></span>
-        <span id="sync-text">已配置</span>
-      </div>
     `;
     updateSyncStatus('synced');
   }
@@ -1239,6 +1231,7 @@ const App = (() => {
     manualSync,
     toggleAutoSync,
     toggleTheme,
+    resetThemeToAuto,
     dismissPrivacy,
     showToast
   };
