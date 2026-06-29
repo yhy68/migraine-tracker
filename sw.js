@@ -1,13 +1,14 @@
-const CACHE_NAME = 'migraine-tracker-v1';
+const CACHE_NAME = 'migraine-tracker-v1.1';
 const ASSETS = [
   './',
   'index.html',
-  'css/style.css',
-  'js/storage.js',
-  'js/app.js',
+  'css/style.css?v=1.1',
+  'js/storage.js?v=1.1',
+  'js/app.js?v=1.1',
   'manifest.json'
 ];
 
+// Install: cache assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
@@ -15,6 +16,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
+// Activate: delete old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -24,10 +26,28 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+// Fetch: network first for HTML, cache first for assets
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('api.github.com')) return;
 
+  // For HTML requests: always go to network first (to get latest version)
+  if (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html')) {
+    event.respondWith(
+      fetch(event.request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      }).catch(() => {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // For other requests: cache first, then network
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {
