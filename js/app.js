@@ -953,11 +953,17 @@ const App = (() => {
     if (confirm('确定要删除这条记录吗？此操作不可撤销。')) {
       Storage.deleteRecord(id);
       showToast('记录已删除', 'success');
-      if (typeof refreshHistoryList === 'function') {
-        refreshHistoryList();
-      } else {
-        applyHistoryFilter();
-      }
+      refreshHistoryList();
+      
+      // 立即同步到云端
+      setTimeout(() => {
+        updateSyncStatus('syncing');
+        Storage.syncData().then(() => {
+          updateSyncStatus('synced');
+        }).catch(() => {
+          updateSyncStatus('error');
+        });
+      }, 500);
     }
   }
 
