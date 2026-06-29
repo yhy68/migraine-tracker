@@ -83,10 +83,35 @@ const App = (() => {
 
   /* ---- Init ---- */
   function init() {
+    initTheme();
     renderHeader();
     loadMainUI();
     tryAutoSync();
     switchTab('record');
+  }
+  
+  /* ---- Theme Management ---- */
+  function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(savedTheme);
+  }
+  
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.body.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.body.removeAttribute('data-theme');
+    }
+    localStorage.setItem('theme', theme);
+  }
+  
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(newTheme);
+    showToast(`已切换到${newTheme === 'dark' ? '深色' : '浅色'}模式`, 'success');
   }
 
   /* ---- Auto Sync ---- */
@@ -653,6 +678,12 @@ const App = (() => {
         </div>
         <div class="settings-section">
           <div class="settings-item">
+            <label>🌙 深色模式</label>
+            <button class="btn btn-sm btn-secondary" onclick="App.toggleTheme()">
+              切换主题
+            </button>
+          </div>
+          <div class="settings-item">
             <label>自动同步（保存后同步到 GitHub）</label>
             <label class="toggle">
               <input type="checkbox" id="auto-sync-toggle" checked onchange="App.toggleAutoSync(this)">
@@ -837,6 +868,7 @@ const App = (() => {
     handleImport,
     manualSync,
     toggleAutoSync,
+    toggleTheme,
     dismissPrivacy,
     showToast
   };
