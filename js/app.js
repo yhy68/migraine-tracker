@@ -87,7 +87,10 @@ const App = (() => {
     const autoBtn = document.getElementById('theme-auto-btn');
     const toggleBtn = document.getElementById('theme-toggle-btn');
     const isAuto = !localStorage.getItem('theme');
-    if (autoBtn) autoBtn.classList.toggle('active', isAuto);
+    if (autoBtn) {
+      autoBtn.classList.toggle('active', isAuto);
+      autoBtn.textContent = isAuto ? '自动' : '手动';
+    }
     if (toggleBtn) toggleBtn.classList.toggle('active', !isAuto);
     if (!hint) return;
     const pad = n => String(n).padStart(2, '0');
@@ -99,7 +102,7 @@ const App = (() => {
     } else {
       const saved = localStorage.getItem('theme');
       const label = saved === 'dark' ? '深色（手动）' : '浅色（手动）';
-      hint.textContent = '当前：' + label + ' ｜ 自动：按时间切换';
+      hint.textContent = '当前：' + label + ' ｜ 点击「手动」可切回自动';
     }
   }
 
@@ -156,9 +159,19 @@ const App = (() => {
   }
 
   function resetThemeToAuto() {
-    localStorage.removeItem('theme');
-    applyTheme(getAutoTheme(), true);
-    showToast('已恢复自动模式（按时间切换）', 'success');
+    const isAuto = !localStorage.getItem('theme');
+    if (isAuto) {
+      /* 当前是自动模式 → 切换到手动模式，保存当前主题 */
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      localStorage.setItem('theme', currentTheme);
+      showToast('已切换到手动模式（主题固定不变）', 'success');
+    } else {
+      /* 当前是手动模式 → 切换回自动模式 */
+      localStorage.removeItem('theme');
+      applyTheme(getAutoTheme(), true);
+      showToast('已恢复自动模式（按时间切换）', 'success');
+    }
+    updateThemeHint();
   }
 
   /* ---- Auto Sync ---- */

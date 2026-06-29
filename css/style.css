@@ -320,8 +320,8 @@ body {
 .pain-btn.level3 { border-color: var(--pain-5-6); } .pain-btn.level3.selected { background: var(--pain-5-6); }
 .pain-btn.level4 { border-color: var(--pain-7-8); } .pain-btn.level4.selected { background: var(--pain-7-8); }
 .pain-btn.level5 { border-color: var(--pain-9-10); } .pain-btn.level5.selected { background: var(--pain-9-10); }
-.pain-scale-labels { display: flex; justify-content: space-between; padding: 0 2px; margin-top: 4px; }
-.pain-scale-labels span { font-size: 11px; }
+.pain-scale-labels { display: flex; justify-content: space-between; padding: 0; margin-top: 6px; }
+.pain-scale-labels span { font-size: 11px; flex: 1; text-align: center; min-width: 0; }
 
 /* ===== Chips ===== */
 .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
