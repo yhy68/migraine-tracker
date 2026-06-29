@@ -32,6 +32,8 @@ const Storage = (() => {
   }
 
   /* ---- Local Records ---- */
+  const DELETED_KEY = 'migraine_deleted';
+  
   function getLocalRecords() {
     const raw = localStorage.getItem(LOCAL_KEY);
     return raw ? JSON.parse(raw) : [];
@@ -39,6 +41,23 @@ const Storage = (() => {
 
   function saveLocalRecords(records) {
     localStorage.setItem(LOCAL_KEY, JSON.stringify(records));
+  }
+  
+  function getDeletedIds() {
+    const raw = localStorage.getItem(DELETED_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }
+  
+  function addDeletedId(id) {
+    const ids = getDeletedIds();
+    if (!ids.includes(id)) {
+      ids.push(id);
+      localStorage.setItem(DELETED_KEY, JSON.stringify(ids));
+    }
+  }
+  
+  function clearDeletedIds() {
+    localStorage.removeItem(DELETED_KEY);
   }
 
   /* ---- GitHub API ---- */
@@ -149,10 +168,27 @@ const Storage = (() => {
   /* ---- Full Sync ---- */
   async function syncData() {
     const local = getLocalRecords();
+    const deletedIds = getDeletedIds();
+    
+    // 从云端拉取数据
     const { records: remote } = await pullFromGitHub();
-    const merged = mergeRecords(local, remote);
+    
+    // 过滤掉已删除的记录（本地和云端都要过滤）
+    const filteredRemote = remote.filter(r => !deletedIds.includes(r.id));
+    const filteredLocal = local.filter(r => !deletedIds.includes(r.id));
+    
+    // 合并本地和云端数据
+    const merged = mergeRecords(filteredLocal, filteredRemote);
+    
+    // 保存到本地
     saveLocalRecords(merged);
+    
+    // 推送到云端（不包含已删除的记录）
     await pushToGitHub(merged);
+    
+    // 同步成功后，清除删除标记
+    clearDeletedIds();
+    
     return merged;
   }
 
@@ -193,6 +229,8 @@ const Storage = (() => {
     const records = getLocalRecords();
     const filtered = records.filter(r => r.id !== id);
     saveLocalRecords(filtered);
+    // 记录删除的ID，同步时过滤
+    addDeletedId(id);
     return filtered;
   }
 
