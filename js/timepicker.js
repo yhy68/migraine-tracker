@@ -11,7 +11,13 @@ class TimePicker {
     this.hour = 12;
     this.minute = 0;
     this.is24Hour = true;
-    this.scrollOffset = { hour: 0, minute: 0 };
+    
+    this.isDragging = false;
+    this.dragWheel = null;
+    this.startY = 0;
+    this.currentOffset = 0;
+    this.itemHeight = 36;
+    this.wheelHeight = 140;
     
     this.init();
   }
@@ -64,12 +70,6 @@ class TimePicker {
           <div class="time-picker-wheel-marker"></div>
         </div>
       </div>
-      <div class="time-picker-nav-btns">
-        <button class="time-picker-nav-btn" data-action="prev-hour">↑</button>
-        <button class="time-picker-nav-btn" data-action="prev-minute">↑</button>
-        <button class="time-picker-nav-btn" data-action="next-hour">↓</button>
-        <button class="time-picker-nav-btn" data-action="next-minute">↓</button>
-      </div>
       <div class="time-picker-footer">
         <button class="time-picker-quick-btn" data-quick="now">现在</button>
         <button class="time-picker-quick-btn" data-quick="hour">整点</button>
@@ -115,17 +115,20 @@ class TimePicker {
     this.scrollToSelected(type);
   }
   
-  scrollToSelected(type) {
+  scrollToSelected(type, animate = true) {
     const inner = this.panel.querySelector(`[data-wheel="${type}"] .time-picker-wheel-inner`);
     if (!inner) return;
     
     const selectedItem = inner.querySelector('.time-picker-wheel-item.selected');
     if (!selectedItem) return;
     
-    const itemHeight = 36;
-    const wheelHeight = 140;
-    const offset = selectedItem.offsetTop - (wheelHeight / 2) + (itemHeight / 2);
+    const offset = selectedItem.offsetTop - (this.wheelHeight / 2) + (this.itemHeight / 2);
     
+    if (animate) {
+      inner.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    } else {
+      inner.style.transition = 'none';
+    }
     inner.style.transform = `translateY(-${offset}px)`;
   }
   
@@ -160,8 +163,6 @@ class TimePicker {
       } else if (target.classList.contains('time-picker-wheel-item')) {
         const wheel = target.closest('[data-wheel]').dataset.wheel;
         this.selectValue(wheel, parseInt(target.dataset.value));
-      } else if (target.classList.contains('time-picker-nav-btn')) {
-        this.handleNavClick(target.dataset.action);
       } else if (target.classList.contains('time-picker-quick-btn')) {
         this.handleQuickSelect(target.dataset.quick);
       }
@@ -210,6 +211,73 @@ class TimePicker {
           break;
       }
     });
+    
+    this.setupDragEvents();
+  }
+  
+  setupDragEvents() {
+    const wheels = this.panel.querySelectorAll('.time-picker-wheel');
+    
+    wheels.forEach(wheel => {
+      wheel.addEventListener('touchstart', (e) => this.onDragStart(e, wheel));
+      wheel.addEventListener('touchmove', (e) => this.onDragMove(e));
+      wheel.addEventListener('touchend', () => this.onDragEnd());
+      
+      wheel.addEventListener('mousedown', (e) => this.onDragStart(e, wheel));
+    });
+    
+    document.addEventListener('mousemove', (e) => this.onDragMove(e));
+    document.addEventListener('mouseup', () => this.onDragEnd());
+  }
+  
+  onDragStart(e, wheel) {
+    e.preventDefault();
+    this.isDragging = true;
+    this.dragWheel = wheel.dataset.wheel;
+    
+    const point = e.touches ? e.touches[0] : e;
+    this.startY = point.clientY;
+    
+    const inner = wheel.querySelector('.time-picker-wheel-inner');
+    const transform = inner.style.transform;
+    const match = transform.match(/translateY\(-?(\d+)px\)/);
+    this.currentOffset = match ? parseInt(match[1]) : 0;
+    
+    inner.style.transition = 'none';
+  }
+  
+  onDragMove(e) {
+    if (!this.isDragging || !this.dragWheel) return;
+    e.preventDefault();
+    
+    const point = e.touches ? e.touches[0] : e;
+    const deltaY = point.clientY - this.startY;
+    
+    const newOffset = this.currentOffset - deltaY;
+    const inner = this.panel.querySelector(`[data-wheel="${this.dragWheel}"] .time-picker-wheel-inner`);
+    
+    inner.style.transform = `translateY(-${newOffset}px)`;
+  }
+  
+  onDragEnd() {
+    if (!this.isDragging || !this.dragWheel) return;
+    
+    const inner = this.panel.querySelector(`[data-wheel="${this.dragWheel}"] .time-picker-wheel-inner`);
+    const transform = inner.style.transform;
+    const match = transform.match(/translateY\(-?(\d+)px\)/);
+    const offset = match ? parseInt(match[1]) : 0;
+    
+    const centerOffset = this.wheelHeight / 2 - this.itemHeight / 2;
+    const relativeOffset = offset + centerOffset;
+    const itemIndex = Math.round(relativeOffset / this.itemHeight);
+    
+    const maxItems = this.dragWheel === 'hour' ? 24 : 60;
+    const clampedIndex = Math.max(0, Math.min(maxItems - 1, itemIndex));
+    
+    this.selectValue(this.dragWheel, clampedIndex);
+    
+    this.isDragging = false;
+    this.dragWheel = null;
   }
   
   handleAmpmClick(ampm) {
@@ -219,23 +287,6 @@ class TimePicker {
       if (this.hour >= 12) this.hour -= 12;
     }
     this.updateValue();
-  }
-  
-  handleNavClick(action) {
-    switch (action) {
-      case 'prev-hour':
-        this.changeHour(-1);
-        break;
-      case 'next-hour':
-        this.changeHour(1);
-        break;
-      case 'prev-minute':
-        this.changeMinute(-1);
-        break;
-      case 'next-minute':
-        this.changeMinute(1);
-        break;
-    }
   }
   
   handleQuickSelect(type) {

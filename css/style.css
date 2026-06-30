@@ -1323,31 +1323,17 @@ body, .card, input, select, textarea, button {
   color: var(--c-blue-deep);
 }
 .time-picker-quick-btn:active { transform: scale(0.98); }
-.time-picker-nav-btns {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 8px;
+.time-picker-wheel {
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  user-select: none;
 }
-.time-picker-nav-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: var(--bg-input);
-  color: var(--text-dark);
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
+.time-picker-wheel::-webkit-scrollbar {
+  display: none;
 }
-.time-picker-nav-btn:hover {
-  background: var(--c-blue-pale);
-  color: var(--c-blue-deep);
+.time-picker-wheel-inner {
+  will-change: transform;
 }
-.time-picker-nav-btn:active { transform: scale(0.95); }
 
 /* ===== DatePicker Component ===== */
 .date-picker-wrapper {
