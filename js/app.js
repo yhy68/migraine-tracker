@@ -261,13 +261,17 @@ const App = (() => {
   /* ---- Record Form ---- */
   let datePickers = {};
   
-  function initDatePickers(startDate, endDate) {
-    const startContainer = document.getElementById('start-date-picker');
-    const endContainer = document.getElementById('end-date-picker');
-    if (!startContainer || !endContainer) return;
+  function initDatePickers(startDate, endDate, startTime, endTime) {
+    const startDateContainer = document.getElementById('start-date-picker');
+    const endDateContainer = document.getElementById('end-date-picker');
+    const startTimeContainer = document.getElementById('start-time-picker');
+    const endTimeContainer = document.getElementById('end-time-picker');
+    if (!startDateContainer || !endDateContainer) return;
     
     if (datePickers.start) datePickers.start.destroy();
     if (datePickers.end) datePickers.end.destroy();
+    if (datePickers.startTime) datePickers.startTime.destroy();
+    if (datePickers.endTime) datePickers.endTime.destroy();
     
     datePickers.start = new DatePicker({
       id: 'start-date',
@@ -294,8 +298,36 @@ const App = (() => {
       }
     });
     
-    startContainer.appendChild(datePickers.start.getElement());
-    endContainer.appendChild(datePickers.end.getElement());
+    datePickers.startTime = new TimePicker({
+      id: 'start-time',
+      value: startTime,
+      placeholder: '选择开始时间',
+      onChange: (val) => {
+        if (datePickers.endTime && datePickers.endTime.getValue() && 
+            datePickers.end.getValue() === datePickers.start.getValue() &&
+            datePickers.endTime.getValue() < val) {
+          datePickers.endTime.setValue(val);
+        }
+      }
+    });
+    
+    datePickers.endTime = new TimePicker({
+      id: 'end-time',
+      value: endTime,
+      placeholder: '选择结束时间',
+      onChange: (val) => {
+        if (datePickers.startTime && datePickers.startTime.getValue() && 
+            datePickers.end.getValue() === datePickers.start.getValue() &&
+            datePickers.startTime.getValue() > val) {
+          datePickers.startTime.setValue(val);
+        }
+      }
+    });
+    
+    startDateContainer.appendChild(datePickers.start.getElement());
+    endDateContainer.appendChild(datePickers.end.getElement());
+    if (startTimeContainer) startTimeContainer.appendChild(datePickers.startTime.getElement());
+    if (endTimeContainer) endTimeContainer.appendChild(datePickers.endTime.getElement());
   }
   
   function splitDateTime(date) {
@@ -323,13 +355,13 @@ const App = (() => {
             <div class="datetime-field">
               <span class="datetime-label">开始时间</span>
               <div id="start-date-picker"></div>
-              <input type="time" id="rec-start-time" value="${start.time}" step="60">
+              <div id="start-time-picker"></div>
             </div>
             <span class="datetime-separator">—</span>
             <div class="datetime-field">
               <span class="datetime-label">结束时间 <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">（可选）</span></span>
               <div id="end-date-picker"></div>
-              <input type="time" id="rec-end-time" value="${end.time}" step="60">
+              <div id="end-time-picker"></div>
             </div>
           </div>
         </div>
@@ -418,7 +450,7 @@ const App = (() => {
     }
     
     setTimeout(() => {
-      initDatePickers(start.date, end.date);
+      initDatePickers(start.date, end.date, start.time, end.time);
     }, 10);
   }
 
@@ -501,15 +533,17 @@ const App = (() => {
       const sd = new Date(r.startTime);
       const pad = n => String(n).padStart(2, '0');
       const startDate = `${sd.getFullYear()}-${pad(sd.getMonth()+1)}-${pad(sd.getDate())}`;
+      const startTime = `${pad(sd.getHours())}:${pad(sd.getMinutes())}`;
       if (datePickers.start) datePickers.start.setValue(startDate);
-      document.getElementById('rec-start-time').value = `${pad(sd.getHours())}:${pad(sd.getMinutes())}`;
+      if (datePickers.startTime) datePickers.startTime.setValue(startTime);
     }
     if (r.endTime) {
       const ed = new Date(r.endTime);
       const pad = n => String(n).padStart(2, '0');
       const endDate = `${ed.getFullYear()}-${pad(ed.getMonth()+1)}-${pad(ed.getDate())}`;
+      const endTime = `${pad(ed.getHours())}:${pad(ed.getMinutes())}`;
       if (datePickers.end) datePickers.end.setValue(endDate);
-      document.getElementById('rec-end-time').value = `${pad(ed.getHours())}:${pad(ed.getMinutes())}`;
+      if (datePickers.endTime) datePickers.endTime.setValue(endTime);
     }
 
     if (r.painLevel) {
@@ -584,12 +618,12 @@ const App = (() => {
   /* ---- Submit Record ---- */
   function getStartDateTime() {
     const d = datePickers.start ? datePickers.start.getValue() : '';
-    const t = document.getElementById('rec-start-time').value;
+    const t = datePickers.startTime ? datePickers.startTime.getValue() : '';
     return (d && t) ? d + 'T' + t : '';
   }
   function getEndDateTime() {
     const d = datePickers.end ? datePickers.end.getValue() : '';
-    const t = document.getElementById('rec-end-time').value;
+    const t = datePickers.endTime ? datePickers.endTime.getValue() : '';
     return (d && t) ? d + 'T' + t : '';
   }
 
