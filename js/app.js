@@ -259,6 +259,45 @@ const App = (() => {
   }
 
   /* ---- Record Form ---- */
+  let datePickers = {};
+  
+  function initDatePickers(startDate, endDate) {
+    const startContainer = document.getElementById('start-date-picker');
+    const endContainer = document.getElementById('end-date-picker');
+    if (!startContainer || !endContainer) return;
+    
+    if (datePickers.start) datePickers.start.destroy();
+    if (datePickers.end) datePickers.end.destroy();
+    
+    datePickers.start = new DatePicker({
+      id: 'start-date',
+      value: startDate,
+      max: new Date().toISOString().split('T')[0],
+      placeholder: '选择开始日期',
+      onChange: (val) => {
+        if (datePickers.end && datePickers.end.getValue() && datePickers.end.getValue() < val) {
+          datePickers.end.setValue(val);
+        }
+      }
+    });
+    
+    datePickers.end = new DatePicker({
+      id: 'end-date',
+      value: endDate,
+      min: startDate,
+      max: new Date().toISOString().split('T')[0],
+      placeholder: '选择结束日期',
+      onChange: (val) => {
+        if (datePickers.start && datePickers.start.getValue() && datePickers.start.getValue() > val) {
+          datePickers.start.setValue(val);
+        }
+      }
+    });
+    
+    startContainer.appendChild(datePickers.start.getElement());
+    endContainer.appendChild(datePickers.end.getElement());
+  }
+  
   function splitDateTime(date) {
     const pad = n => String(n).padStart(2, '0');
     return {
@@ -283,13 +322,13 @@ const App = (() => {
           <div class="datetime-row">
             <div class="datetime-field">
               <span class="datetime-label">开始时间</span>
-              <input type="date" id="rec-start-date" value="${start.date}">
+              <div id="start-date-picker"></div>
               <input type="time" id="rec-start-time" value="${start.time}" step="60">
             </div>
             <span class="datetime-separator">—</span>
             <div class="datetime-field">
               <span class="datetime-label">结束时间 <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">（可选）</span></span>
-              <input type="date" id="rec-end-date" value="${end.date}">
+              <div id="end-date-picker"></div>
               <input type="time" id="rec-end-time" value="${end.time}" step="60">
             </div>
           </div>
@@ -377,6 +416,10 @@ const App = (() => {
     if (editingId) {
       prefillForm(editingId);
     }
+    
+    setTimeout(() => {
+      initDatePickers(start.date, end.date);
+    }, 10);
   }
 
   function renderMedRow(data) {
@@ -457,13 +500,15 @@ const App = (() => {
     if (r.startTime) {
       const sd = new Date(r.startTime);
       const pad = n => String(n).padStart(2, '0');
-      document.getElementById('rec-start-date').value = `${sd.getFullYear()}-${pad(sd.getMonth()+1)}-${pad(sd.getDate())}`;
+      const startDate = `${sd.getFullYear()}-${pad(sd.getMonth()+1)}-${pad(sd.getDate())}`;
+      if (datePickers.start) datePickers.start.setValue(startDate);
       document.getElementById('rec-start-time').value = `${pad(sd.getHours())}:${pad(sd.getMinutes())}`;
     }
     if (r.endTime) {
       const ed = new Date(r.endTime);
       const pad = n => String(n).padStart(2, '0');
-      document.getElementById('rec-end-date').value = `${ed.getFullYear()}-${pad(ed.getMonth()+1)}-${pad(ed.getDate())}`;
+      const endDate = `${ed.getFullYear()}-${pad(ed.getMonth()+1)}-${pad(ed.getDate())}`;
+      if (datePickers.end) datePickers.end.setValue(endDate);
       document.getElementById('rec-end-time').value = `${pad(ed.getHours())}:${pad(ed.getMinutes())}`;
     }
 
@@ -538,12 +583,12 @@ const App = (() => {
 
   /* ---- Submit Record ---- */
   function getStartDateTime() {
-    const d = document.getElementById('rec-start-date').value;
+    const d = datePickers.start ? datePickers.start.getValue() : '';
     const t = document.getElementById('rec-start-time').value;
     return (d && t) ? d + 'T' + t : '';
   }
   function getEndDateTime() {
-    const d = document.getElementById('rec-end-date').value;
+    const d = datePickers.end ? datePickers.end.getValue() : '';
     const t = document.getElementById('rec-end-time').value;
     return (d && t) ? d + 'T' + t : '';
   }
@@ -678,9 +723,9 @@ const App = (() => {
 
         <!-- Custom date range -->
         <div class="custom-range-row" id="custom-range-row" style="display:${histFilterType==='custom'?'flex':'none'};">
-          <input type="date" id="range-start" value="${histCustomStart}">
+          <div id="range-start-picker"></div>
           <span class="range-separator">至</span>
-          <input type="date" id="range-end" value="${histCustomEnd}">
+          <div id="range-end-picker"></div>
           <button class="btn btn-sm btn-secondary" onclick="App.applyCustomRange()">确定</button>
         </div>
 
@@ -735,11 +780,51 @@ const App = (() => {
         setFilter('all');
       }
     }
+    
+    setTimeout(() => {
+      initRangeDatePickers();
+    }, 10);
+  }
+
+  function initRangeDatePickers() {
+    const startContainer = document.getElementById('range-start-picker');
+    const endContainer = document.getElementById('range-end-picker');
+    if (!startContainer || !endContainer) return;
+    
+    if (datePickers.rangeStart) datePickers.rangeStart.destroy();
+    if (datePickers.rangeEnd) datePickers.rangeEnd.destroy();
+    
+    datePickers.rangeStart = new DatePicker({
+      id: 'range-start',
+      value: histCustomStart,
+      max: new Date().toISOString().split('T')[0],
+      placeholder: '开始日期',
+      onChange: (val) => {
+        if (datePickers.rangeEnd && datePickers.rangeEnd.getValue() && datePickers.rangeEnd.getValue() < val) {
+          datePickers.rangeEnd.setValue(val);
+        }
+      }
+    });
+    
+    datePickers.rangeEnd = new DatePicker({
+      id: 'range-end',
+      value: histCustomEnd,
+      max: new Date().toISOString().split('T')[0],
+      placeholder: '结束日期',
+      onChange: (val) => {
+        if (datePickers.rangeStart && datePickers.rangeStart.getValue() && datePickers.rangeStart.getValue() > val) {
+          datePickers.rangeStart.setValue(val);
+        }
+      }
+    });
+    
+    startContainer.appendChild(datePickers.rangeStart.getElement());
+    endContainer.appendChild(datePickers.rangeEnd.getElement());
   }
 
   function applyCustomRange() {
-    const start = document.getElementById('range-start').value;
-    const end = document.getElementById('range-end').value;
+    const start = datePickers.rangeStart ? datePickers.rangeStart.getValue() : '';
+    const end = datePickers.rangeEnd ? datePickers.rangeEnd.getValue() : '';
     if (!start || !end) {
       showToast('请选择开始和结束日期', 'info');
       return;
