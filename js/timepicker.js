@@ -148,62 +148,6 @@ class TimePicker {
     }
   }
   
-  setupEvents() {
-    this.input.addEventListener('click', () => this.toggle());
-    this.input.addEventListener('focus', () => this.open());
-    
-    this.panel.addEventListener('click', (e) => {
-      const target = e.target;
-      
-      if (target.classList.contains('time-picker-ampm-btn')) {
-        this.handleAmpmClick(target.dataset.ampm);
-      } else if (target.classList.contains('time-picker-wheel-item')) {
-        const wheel = target.closest('[data-wheel]').dataset.wheel;
-        this.selectValue(wheel, parseInt(target.dataset.value));
-      } else if (target.classList.contains('time-picker-quick-btn')) {
-        this.handleQuickSelect(target.dataset.quick);
-      }
-    });
-    
-    document.addEventListener('click', (e) => {
-      if (!this.container.contains(e.target) && this.isOpen) {
-        this.close();
-      }
-    });
-    
-    document.addEventListener('keydown', (e) => {
-      if (!this.isOpen) return;
-      
-      switch (e.key) {
-        case 'Escape':
-          this.close();
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          this.changeMinute(-1);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          this.changeMinute(1);
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          this.changeHour(-1);
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          this.changeHour(1);
-          break;
-        case 'Enter':
-          e.preventDefault();
-          this.close();
-          break;
-      }
-    });
-    
-    this.setupDragEvents();
-  }
-  
   setupDragEvents() {
     const wheels = this.panel.querySelectorAll('.time-picker-wheel');
     
@@ -215,9 +159,6 @@ class TimePicker {
       wheel.addEventListener('mousedown', (e) => this.onDragStart(e, wheel));
       wheel.addEventListener('wheel', (e) => this.onWheel(e, wheel), { passive: false });
     });
-    
-    document.addEventListener('mousemove', (e) => this.onDragMove(e));
-    document.addEventListener('mouseup', () => this.onDragEnd());
   }
   
   onWheel(e, wheel) {
@@ -444,5 +385,73 @@ class TimePicker {
     if (this.container) {
       this.container.remove();
     }
+    document.removeEventListener('click', this.globalClickHandler);
+    document.removeEventListener('keydown', this.globalKeyHandler);
+    document.removeEventListener('mousemove', this.globalMouseMoveHandler);
+    document.removeEventListener('mouseup', this.globalMouseUpHandler);
+  }
+  
+  setupEvents() {
+    this.input.addEventListener('click', () => this.toggle());
+    this.input.addEventListener('focus', () => this.open());
+    
+    this.panel.addEventListener('click', (e) => {
+      const target = e.target;
+      
+      if (target.classList.contains('time-picker-ampm-btn')) {
+        this.handleAmpmClick(target.dataset.ampm);
+      } else if (target.classList.contains('time-picker-wheel-item')) {
+        const wheel = target.closest('[data-wheel]').dataset.wheel;
+        this.selectValue(wheel, parseInt(target.dataset.value));
+      } else if (target.classList.contains('time-picker-quick-btn')) {
+        this.handleQuickSelect(target.dataset.quick);
+      }
+    });
+    
+    this.globalClickHandler = (e) => {
+      if (!this.container.contains(e.target) && this.isOpen) {
+        this.close();
+      }
+    };
+    
+    this.globalKeyHandler = (e) => {
+      if (!this.isOpen) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          this.close();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.changeMinute(-1);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.changeMinute(1);
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          this.changeHour(-1);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          this.changeHour(1);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          this.close();
+          break;
+      }
+    };
+    
+    this.globalMouseMoveHandler = (e) => this.onDragMove(e);
+    this.globalMouseUpHandler = () => this.onDragEnd();
+    
+    document.addEventListener('click', this.globalClickHandler);
+    document.addEventListener('keydown', this.globalKeyHandler);
+    document.addEventListener('mousemove', this.globalMouseMoveHandler);
+    document.addEventListener('mouseup', this.globalMouseUpHandler);
+    
+    this.setupDragEvents();
   }
 }

@@ -10,7 +10,7 @@ const Storage = (() => {
 
   const DEFAULT_CONFIG = {
     username: 'yhy68',
-    token: (function(){var a='Z2l0aHViX3BhdF8xMUFYWFhYWlEw';var b='c1dvUzUySkJZcGw0XzFEbExSdlJaZVpOV09rbHVDQVlwQUwxTkJnSHZWNmx5Mnh5dDMydllTYjJQQU5VVFRVQ3VEYTNBRmlC';return atob(a+b);})(),
+    token: '',
     dataRepo: 'migraine-data'
   };
 

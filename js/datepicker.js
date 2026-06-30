@@ -149,61 +149,6 @@ class DatePicker {
     return `${y}-${m}-${d}`;
   }
   
-  setupEvents() {
-    this.input.addEventListener('click', () => this.toggle());
-    this.input.addEventListener('focus', () => this.open());
-    
-    this.calendar.addEventListener('click', (e) => {
-      const target = e.target;
-      
-      if (target.classList.contains('date-picker-nav-btn')) {
-        this.handleNavClick(target.dataset.action);
-      } else if (target.classList.contains('date-picker-day')) {
-        if (!target.classList.contains('disabled')) {
-          this.selectDate(target.dataset.date);
-        }
-      } else if (target.classList.contains('date-picker-quick-btn')) {
-        this.handleQuickSelect(target.dataset.quick);
-      }
-    });
-    
-    document.addEventListener('click', (e) => {
-      if (!this.container.contains(e.target) && this.isOpen) {
-        this.close();
-      }
-    });
-    
-    document.addEventListener('keydown', (e) => {
-      if (!this.isOpen) return;
-      
-      switch (e.key) {
-        case 'Escape':
-          this.close();
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          this.navigateDay(-7);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          this.navigateDay(7);
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          this.navigateDay(-1);
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          this.navigateDay(1);
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (this.value) this.close();
-          break;
-      }
-    });
-  }
-  
   handleNavClick(action) {
     switch (action) {
       case 'prev-month':
@@ -328,5 +273,65 @@ class DatePicker {
     if (this.container) {
       this.container.remove();
     }
+    document.removeEventListener('click', this.globalClickHandler);
+    document.removeEventListener('keydown', this.globalKeyHandler);
+  }
+  
+  setupEvents() {
+    this.input.addEventListener('click', () => this.toggle());
+    this.input.addEventListener('focus', () => this.open());
+    
+    this.calendar.addEventListener('click', (e) => {
+      const target = e.target;
+      
+      if (target.classList.contains('date-picker-nav-btn')) {
+        this.handleNavClick(target.dataset.action);
+      } else if (target.classList.contains('date-picker-day')) {
+        if (!target.classList.contains('disabled')) {
+          this.selectDate(target.dataset.date);
+        }
+      } else if (target.classList.contains('date-picker-quick-btn')) {
+        this.handleQuickSelect(target.dataset.quick);
+      }
+    });
+    
+    this.globalClickHandler = (e) => {
+      if (!this.container.contains(e.target) && this.isOpen) {
+        this.close();
+      }
+    };
+    
+    this.globalKeyHandler = (e) => {
+      if (!this.isOpen) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          this.close();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          this.navigateDay(-7);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          this.navigateDay(7);
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          this.navigateDay(-1);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          this.navigateDay(1);
+          break;
+        case 'Enter':
+          e.preventDefault();
+          if (this.value) this.close();
+          break;
+      }
+    };
+    
+    document.addEventListener('click', this.globalClickHandler);
+    document.addEventListener('keydown', this.globalKeyHandler);
   }
 }

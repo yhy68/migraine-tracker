@@ -642,6 +642,12 @@ const App = (() => {
     }
 
     const painLevel = parseInt(painBtn.dataset.level);
+    
+    if (isNaN(painLevel) || painLevel < 1 || painLevel > 10) {
+      showToast('疼痛程度无效', 'error');
+      return;
+    }
+
     const painLocations = getSelectedIds('#pain-location-group .chip');
     const painType = getSelectedId('#pain-type-group .radio-chip');
     const aura = getSelectedIds('#aura-group .chip');
@@ -651,6 +657,14 @@ const App = (() => {
       ...getSelectedIds('#trigger-group-extra .chip')
     ];
     const medications = collectMedications();
+
+    const MAX_NOTES_LENGTH = 2000;
+    if (notes.length > MAX_NOTES_LENGTH) {
+      showToast(`备注内容过长（最大${MAX_NOTES_LENGTH}字符）`, 'error');
+      return;
+    }
+
+    const sanitizedNotes = escapeHtml(notes);
 
     const record = {
       startTime: startTime.includes(':') ? startTime.replace(/:\d{2}$/, ':00') : startTime + ':00',
@@ -662,7 +676,7 @@ const App = (() => {
       symptoms,
       triggers,
       medications,
-      notes
+      notes: sanitizedNotes
     };
 
     try {
@@ -901,7 +915,9 @@ const App = (() => {
   }
 
   function applyFilterAndSearch(records) {
-    let result = [...records];
+    let result = records;
+    const now = new Date();
+    
     if (histFilterType === 'custom') {
       if (histCustomStart) {
         const start = new Date(histCustomStart);
@@ -915,7 +931,7 @@ const App = (() => {
       }
     } else if (histFilterType !== 'all') {
       const days = parseInt(histFilterType);
-      const cutoff = new Date();
+      const cutoff = new Date(now);
       cutoff.setDate(cutoff.getDate() - days);
       cutoff.setHours(0, 0, 0, 0);
       result = result.filter(r => new Date(r.startTime) >= cutoff);
@@ -923,6 +939,7 @@ const App = (() => {
     if (histSearch) {
       result = result.filter(r => (r.notes || '').toLowerCase().includes(histSearch));
     }
+    
     result.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
     return result;
   }
@@ -1017,7 +1034,7 @@ const App = (() => {
           ${r.symptoms&&r.symptoms.length>0 ? `<div>症状: ${r.symptoms.map(s=>getSymptomLabel(s)).join('、')}</div>` : ''}
           ${r.triggers&&r.triggers.length>0 ? `<div>诱因: ${r.triggers.map(t=>getTriggerLabel(t)).join('、')}</div>` : ''}
           ${r.medications&&r.medications.length>0 ? `<div>用药: ${r.medications.map(m=>`${m.name} ${m.dose||''} ${m.time||''} ${m.effect?'效果'+(m.effect)+'/5':''}`).join('; ')}</div>` : ''}
-          ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--bg);border-radius:6px;">备注: ${escapeHtml(r.notes)}</div>` : ''}
+          ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--bg);border-radius:6px;">备注: ${r.notes}</div>` : ''}
           <div class="rc-actions" onclick="event.stopPropagation()">
             <button class="btn btn-sm btn-secondary" onclick="App.editRecord('${r.id}')">编辑</button>
             <button class="btn btn-sm btn-danger" onclick="App.confirmDelete('${r.id}')">删除</button>
@@ -1059,6 +1076,9 @@ const App = (() => {
   /* ---- Backup & Settings ---- */
   function renderBackup(container) {
     const count = Storage.countRecords();
+    const cfg = Storage.getConfig();
+    const hasToken = cfg && cfg.token && cfg.token.length > 0;
+    
     container.innerHTML = `
       <div class="card backup-section">
         <div class="section-title">
@@ -1075,11 +1095,33 @@ const App = (() => {
 
       <div class="card backup-section">
         <div class="section-title">
+          GitHub 同步配置
+        </div>
+        <p>配置 GitHub Personal Access Token 以启用数据同步功能。</p>
+        <div class="form-group">
+          <label class="form-label">GitHub 用户名</label>
+          <input type="text" class="form-input" id="config-username" value="${cfg.username || ''}" placeholder="GitHub 用户名" maxlength="50">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Personal Access Token</label>
+          <input type="password" class="form-input" id="config-token" value="${hasToken ? '***' : ''}" placeholder="输入 GitHub PAT" maxlength="255">
+          <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">需要 repo 权限的令牌。令牌仅存储在本地浏览器中。</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">数据仓库</label>
+          <input type="text" class="form-input" id="config-repo" value="${cfg.dataRepo || ''}" placeholder="仓库名称" maxlength="100">
+        </div>
+        <button class="btn btn-primary" style="width:auto" onclick="App.saveConfig()">保存配置</button>
+        ${hasToken ? '<p style="font-size:12px;color:var(--success);margin-top:8px;">✓ 已配置令牌</p>' : '<p style="font-size:12px;color:var(--warning);margin-top:8px;">⚠ 未配置令牌，同步功能不可用</p>'}
+      </div>
+
+      <div class="card backup-section">
+        <div class="section-title">
           手动同步
         </div>
         <p>将本地记录与 GitHub 私有仓库同步。</p>
         <div class="backup-actions" style="align-items: center;">
-          <button class="btn btn-secondary" style="width:auto" id="btn-sync" onclick="App.manualSync()">立即同步</button>
+          <button class="btn btn-secondary" style="width:auto" id="btn-sync" onclick="App.manualSync()" ${!hasToken ? 'disabled' : ''}>立即同步</button>
         </div>
       </div>
 
@@ -1103,7 +1145,7 @@ const App = (() => {
           <div class="settings-item">
             <label>自动同步（保存后同步到 GitHub）</label>
             <label class="toggle">
-              <input type="checkbox" id="auto-sync-toggle" checked onchange="App.toggleAutoSync(this)">
+              <input type="checkbox" id="auto-sync-toggle" ${hasToken ? 'checked' : ''} onchange="App.toggleAutoSync(this)" ${!hasToken ? 'disabled' : ''}>
               <span class="slider"></span>
             </label>
           </div>
@@ -1111,9 +1153,6 @@ const App = (() => {
             <label>隐私声明</label>
             <button class="btn btn-sm btn-secondary" onclick="localStorage.removeItem('privacy_dismissed');location.reload()">重新显示</button>
           </div>
-        </div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:12px;">
-          数据仓库: yhy68/migraine-data
         </div>
       </div>
     `;
@@ -1162,6 +1201,29 @@ const App = (() => {
 
   function toggleAutoSync(toggle) {
     localStorage.setItem('auto_sync', toggle.checked ? '1' : '0');
+  }
+
+  function saveConfig() {
+    const username = document.getElementById('config-username').value.trim();
+    const token = document.getElementById('config-token').value.trim();
+    const repo = document.getElementById('config-repo').value.trim();
+    
+    if (!username) {
+      showToast('请输入 GitHub 用户名', 'error');
+      return;
+    }
+    if (!token || token === '***') {
+      showToast('请输入 Personal Access Token', 'error');
+      return;
+    }
+    if (!repo) {
+      showToast('请输入仓库名称', 'error');
+      return;
+    }
+    
+    Storage.saveConfig({ username, token, dataRepo: repo });
+    showToast('配置已保存', 'success');
+    renderBackup(document.getElementById('tab-content'));
   }
 
   /* ---- Header ---- */
