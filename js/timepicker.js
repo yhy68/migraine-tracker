@@ -74,7 +74,6 @@ class TimePicker {
         <button class="time-picker-quick-btn" data-quick="now">现在</button>
         <button class="time-picker-quick-btn" data-quick="hour">整点</button>
         <button class="time-picker-quick-btn" data-quick="half">半点</button>
-        <button class="time-picker-quick-btn" data-quick="quarter">15分</button>
       </div>
     `;
     
