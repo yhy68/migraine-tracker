@@ -75,8 +75,6 @@ class TimePicker {
         <button class="time-picker-quick-btn" data-quick="hour">整点</button>
         <button class="time-picker-quick-btn" data-quick="half">半点</button>
         <button class="time-picker-quick-btn" data-quick="quarter">15分</button>
-        <button class="time-picker-quick-btn" data-quick="5min">5分</button>
-        <button class="time-picker-quick-btn" data-quick="30min+">+30分</button>
       </div>
     `;
     
@@ -197,14 +195,6 @@ class TimePicker {
           e.preventDefault();
           this.changeHour(1);
           break;
-        case 'PageUp':
-          e.preventDefault();
-          this.changeMinute(-15);
-          break;
-        case 'PageDown':
-          e.preventDefault();
-          this.changeMinute(15);
-          break;
         case 'Enter':
           e.preventDefault();
           this.close();
@@ -224,6 +214,7 @@ class TimePicker {
       wheel.addEventListener('touchend', () => this.onDragEnd());
       
       wheel.addEventListener('mousedown', (e) => this.onDragStart(e, wheel));
+      wheel.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
     });
     
     document.addEventListener('mousemove', (e) => this.onDragMove(e));
@@ -257,6 +248,38 @@ class TimePicker {
     const inner = this.panel.querySelector(`[data-wheel="${this.dragWheel}"] .time-picker-wheel-inner`);
     
     inner.style.transform = `translateY(-${newOffset}px)`;
+    
+    this.updateDisplayFromScroll(newOffset);
+  }
+  
+  updateDisplayFromScroll(offset) {
+    const centerOffset = this.wheelHeight / 2 - this.itemHeight / 2;
+    const relativeOffset = offset + centerOffset;
+    const itemIndex = Math.round(relativeOffset / this.itemHeight);
+    
+    const maxItems = this.dragWheel === 'hour' ? 24 : 60;
+    const clampedIndex = Math.max(0, Math.min(maxItems - 1, itemIndex));
+    
+    if (this.dragWheel === 'hour') {
+      this.hour = clampedIndex;
+    } else {
+      this.minute = clampedIndex;
+    }
+    
+    this.updateDisplay();
+    this.updateWheelSelection();
+  }
+  
+  updateWheelSelection() {
+    const wheels = this.panel.querySelectorAll('.time-picker-wheel');
+    wheels.forEach(wheel => {
+      const type = wheel.dataset.wheel;
+      const items = wheel.querySelectorAll('.time-picker-wheel-item');
+      items.forEach((item, index) => {
+        const isSelected = type === 'hour' ? index === this.hour : index === this.minute;
+        item.classList.toggle('selected', isSelected);
+      });
+    });
   }
   
   onDragEnd() {
@@ -305,12 +328,6 @@ class TimePicker {
         break;
       case 'quarter':
         this.minute = Math.floor(this.minute / 15) * 15;
-        break;
-      case '5min':
-        this.minute = Math.floor(this.minute / 5) * 5;
-        break;
-      case '30min+':
-        this.changeMinute(30);
         break;
     }
     this.updateValue();
