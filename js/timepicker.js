@@ -214,11 +214,23 @@ class TimePicker {
       wheel.addEventListener('touchend', () => this.onDragEnd());
       
       wheel.addEventListener('mousedown', (e) => this.onDragStart(e, wheel));
-      wheel.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+      wheel.addEventListener('wheel', (e) => this.onWheel(e, wheel), { passive: false });
     });
     
     document.addEventListener('mousemove', (e) => this.onDragMove(e));
     document.addEventListener('mouseup', () => this.onDragEnd());
+  }
+  
+  onWheel(e, wheel) {
+    e.preventDefault();
+    const wheelType = wheel.dataset.wheel;
+    const delta = e.deltaY > 0 ? 1 : -1;
+    
+    if (wheelType === 'hour') {
+      this.changeHour(delta);
+    } else {
+      this.changeMinute(delta);
+    }
   }
   
   onDragStart(e, wheel) {
