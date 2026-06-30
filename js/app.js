@@ -1147,7 +1147,9 @@ const App = (() => {
   function formatDate(isoString) {
     const d = new Date(isoString);
     const now = new Date();
-    const diffDays = Math.floor((now - d) / 86400000);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const recordDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const diffDays = Math.floor((today - recordDate) / 86400000);
     const time = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
     const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     if (diffDays === 0) return '今天 ' + time;
