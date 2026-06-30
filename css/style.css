@@ -980,77 +980,550 @@ textarea:focus { border-color: var(--c-blue); outline: none; box-shadow: 0 0 0 3
 .toast.info { background: var(--c-blue-deep); }
 @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ===== Responsive ===== */
-@media (max-width: 480px) {
-  .app-container { padding: 10px; }
-  .card { padding: 14px; }
-  .mascot-icon { max-width: 64px; }
-  .app-header h1 { font-size: 22px; }
-  .app-header .subtitle { font-size: 12px; }
-  .pain-btn { width: 32px; height: 32px; font-size: 11px; }
-  .pain-level-group { gap: 2px; }
-  .chip { padding: 7px 10px; font-size: 12px; }
-  .chip-group { gap: 5px; }
-  .radio-chip { padding: 7px 10px; font-size: 12px; }
-  .radio-chips { gap: 5px; }
-  .med-row { flex-direction: column; align-items: stretch; }
-  .med-row .med-name, .med-row .med-dose, .med-row .med-time, .med-row .med-effect { width: 100%; }
-  .btn { padding: 9px 16px; font-size: 13px; }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
-  .tab-btn { font-size: 12.5px; padding: 8px 4px; }
+/* ===== Responsive Design ===== */
 
-  /* datetime: stack vertically on small screens */
-  .datetime-row { flex-direction: column; gap: 10px; align-items: stretch; }
+/* Mobile Devices (< 768px) */
+@media (max-width: 767px) {
+  html { font-size: 15px; }
+  
+  .app-container { 
+    padding: 12px; 
+    max-width: 100%;
+    transition: padding var(--transition-normal);
+  }
+  
+  .card { 
+    padding: 16px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .mascot-icon { 
+    max-width: 70px; 
+    transition: max-width var(--transition-normal);
+  }
+  
+  .app-header { 
+    padding: 20px 0 12px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .app-header h1 { 
+    font-size: 22px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .app-header .subtitle { 
+    font-size: 12px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .sync-indicator { 
+    font-size: 11px; 
+    transition: font-size var(--transition-normal);
+  }
+
+  .tab-nav { 
+    padding: 4px; 
+    gap: 4px;
+    transition: padding var(--transition-normal), gap var(--transition-normal);
+  }
+  
+  .tab-btn { 
+    padding: 11px 6px; 
+    font-size: 13px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .privacy-banner { 
+    padding: 10px 12px; 
+    font-size: 11px; 
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+
+  .section-title { 
+    font-size: 15px; 
+    margin-bottom: 12px;
+    transition: font-size var(--transition-normal), margin-bottom var(--transition-normal);
+  }
+
+  .pain-level-group { 
+    gap: 4px; 
+    transition: gap var(--transition-normal);
+  }
+  
+  .pain-btn { 
+    font-size: 13px; 
+    min-height: 40px;
+    transition: font-size var(--transition-normal);
+  }
+  
+  .pain-scale-labels span { 
+    font-size: 10px; 
+    transition: font-size var(--transition-normal);
+  }
+
+  .chip-group { gap: 6px; }
+  .chip { 
+    padding: 10px 14px; 
+    font-size: 13px; 
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .radio-chips { gap: 6px; }
+  .radio-chip { 
+    padding: 10px 14px; 
+    font-size: 13px; 
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+
+  .med-row { 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: 10px;
+    transition: flex-direction var(--transition-normal), gap var(--transition-normal);
+  }
+  
+  .med-row .med-name, .med-row .med-dose, .med-row .med-time, .med-row .med-effect { width: 100%; }
+
+  .btn { 
+    padding: 12px 20px; 
+    font-size: 14px; 
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .btn-sm { 
+    padding: 10px 16px; 
+    font-size: 13px; 
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+
+  .datetime-row { 
+    flex-direction: column; 
+    gap: 12px; 
+    align-items: stretch;
+    transition: flex-direction var(--transition-normal), gap var(--transition-normal);
+  }
+  
   .datetime-field { min-width: 100%; }
   .datetime-separator { display: none; }
   .datetime-label { font-size: 12px; }
+  
   .datetime-field input[type="date"],
   .datetime-field input[type="time"],
-  .datetime-field input[type="datetime-local"] { font-size: 14px; padding: 10px 12px; }
-  .datetime-separator { display: none; }
+  .datetime-field input[type="datetime-local"] { 
+    font-size: 14px; 
+    padding: 12px 14px; 
+    min-height: 44px;
+    transition: font-size var(--transition-normal), padding var(--transition-normal);
+  }
 
-  /* history controls stack on small screens */
-  .history-controls { flex-direction: column; align-items: stretch; gap: 8px; }
-  .history-count { margin-left: 0; text-align: center; align-self: center; }
+  .time-picker-input {
+    padding: 12px 14px;
+    font-size: 14px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+
+  .time-picker-panel {
+    width: calc(100vw - 24px);
+    max-width: 400px;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: width var(--transition-normal), max-width var(--transition-normal);
+  }
+
+  .time-picker-display {
+    font-size: 28px;
+    transition: font-size var(--transition-normal);
+  }
+
+  .history-controls { 
+    flex-direction: column; 
+    align-items: stretch; 
+    gap: 10px;
+    transition: flex-direction var(--transition-normal), gap var(--transition-normal);
+  }
+  
+  .history-count { margin-left: 0; text-align: center; }
   .filter-dropdown { width: 100%; }
   .dropdown-trigger { justify-content: space-between; }
   .dropdown-menu { left: 0; right: 0; }
 
-  /* history: new elements stack on small screens */
-  .filter-chips { gap: 4px; }
-  .filter-chip { padding: 6px 10px; font-size: 12px; }
-  .custom-range-row { flex-direction: column; align-items: stretch; }
+  .filter-chips { gap: 6px; }
+  .filter-chip { 
+    padding: 8px 12px; 
+    font-size: 12px;
+    min-height: 40px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .custom-range-row { 
+    flex-direction: column; 
+    align-items: stretch;
+    transition: flex-direction var(--transition-normal);
+  }
+  
   .custom-range-row input[type="date"] { width: 100%; }
-  .history-toolbar { flex-direction: column; align-items: stretch; }
+  
+  .history-toolbar { 
+    flex-direction: column; 
+    align-items: stretch;
+    transition: flex-direction var(--transition-normal);
+  }
+  
   .page-size-selector { justify-content: center; }
-  .history-count { margin-left: 0; text-align: center; align-self: center; }
 
-  /* settings: stack on small screens */
-  .settings-item { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .record-card { 
+    padding: 14px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .record-card .rc-time { 
+    font-size: 16px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .record-card .rc-date { 
+    font-size: 12px; 
+    transition: font-size var(--transition-normal);
+  }
+
+  .settings-item { 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 10px;
+    transition: flex-direction var(--transition-normal), gap var(--transition-normal);
+  }
+  
   .settings-item label:first-child { white-space: normal; overflow: visible; }
-  .settings-item > div { width: 100%; display: flex; justify-content: stretch; gap: 8px; }
+  .settings-item > div { width: 100%; display: flex; justify-content: stretch; gap: 10px; }
   .settings-item > div button, .settings-item > div > * { flex: 1; }
+
+  .cloud-deco.a { width: 80px; top: 40px; }
+  .cloud-deco.b { width: 70px; top: 80px; }
+  .cloud-deco.c { width: 60px; bottom: 120px; }
+  .cloud-deco.d { width: 75px; bottom: 60px; }
+  .cloud-deco.e { width: 55px; top: 160px; }
+  .cloud-deco.f { width: 65px; top: 120px; }
+  .cloud-deco.g { width: 45px; bottom: 160px; }
+  .cloud-deco.h { width: 55px; bottom: 200px; }
 }
 
-@media (min-width: 481px) and (max-width: 720px) {
-  .app-container { padding: 14px 18px; }
-  .card { padding: 18px; }
-  .btn-sm { padding: 7px 14px; font-size: 13px; }
-  .settings-item { gap: 8px; }
-}
-
-/* Desktop / large screen */
-@media (min-width: 721px) {
-  .app-container { padding: 20px 24px; }
-  .card { padding: 22px; }
-  .app-header h1 { font-size: 28px; }
-  .tab-btn { padding: 12px 16px; font-size: 15px; }
-  .datetime-row { gap: 12px; }
-  .datetime-field { min-width: 180px; }
-  .datetime-label { font-size: 13px; }
+/* Tablet Devices (768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html { font-size: 15.5px; }
+  
+  .app-container { 
+    padding: 16px 24px; 
+    max-width: 720px;
+    transition: padding var(--transition-normal), max-width var(--transition-normal);
+  }
+  
+  .card { 
+    padding: 20px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .mascot-icon { 
+    max-width: 80px; 
+    transition: max-width var(--transition-normal);
+  }
+  
+  .app-header { 
+    padding: 24px 0 14px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .app-header h1 { 
+    font-size: 24px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .app-header .subtitle { 
+    font-size: 13px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .tab-btn { 
+    padding: 12px 12px; 
+    font-size: 14px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .pain-btn { 
+    font-size: 13px; 
+    min-height: 42px;
+    transition: font-size var(--transition-normal);
+  }
+  
+  .chip { 
+    padding: 10px 16px; 
+    font-size: 13px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .radio-chip { 
+    padding: 10px 16px; 
+    font-size: 13px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .btn { 
+    padding: 12px 24px; 
+    font-size: 14px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .btn-sm { 
+    padding: 10px 18px; 
+    font-size: 13px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .datetime-row { 
+    gap: 14px; 
+    transition: gap var(--transition-normal);
+  }
+  
+  .datetime-field { min-width: 160px; }
+  
   .datetime-field input[type="date"],
   .datetime-field input[type="time"],
-  .datetime-field input[type="datetime-local"] { font-size: 15px; padding: 11px 14px; }
+  .datetime-field input[type="datetime-local"] { 
+    font-size: 14px; 
+    padding: 12px 14px;
+    min-height: 44px;
+    transition: font-size var(--transition-normal), padding var(--transition-normal);
+  }
+  
+  .time-picker-input {
+    padding: 12px 14px;
+    font-size: 14px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .time-picker-panel {
+    width: 360px;
+    transition: width var(--transition-normal);
+  }
+  
+  .time-picker-display {
+    font-size: 32px;
+    transition: font-size var(--transition-normal);
+  }
+  
+  .record-card { 
+    padding: 16px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .settings-item { 
+    gap: 12px; 
+    transition: gap var(--transition-normal);
+  }
+
+  .cloud-deco.a { width: 100px; }
+  .cloud-deco.b { width: 85px; }
+  .cloud-deco.c { width: 75px; }
+  .cloud-deco.d { width: 90px; }
+  .cloud-deco.e { width: 65px; }
+  .cloud-deco.f { width: 80px; }
+  .cloud-deco.g { width: 55px; }
+  .cloud-deco.h { width: 70px; }
+}
+
+/* Desktop Devices (≥ 1024px) */
+@media (min-width: 1024px) {
+  html { font-size: 16px; }
+  
+  .app-container { 
+    padding: 24px 32px; 
+    max-width: 720px;
+    transition: padding var(--transition-normal), max-width var(--transition-normal);
+  }
+  
+  .card { 
+    padding: 24px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .mascot-icon { 
+    max-width: 100px; 
+    transition: max-width var(--transition-normal);
+  }
+  
+  .app-header { 
+    padding: 32px 0 20px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .app-header h1 { 
+    font-size: 30px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .app-header .subtitle { 
+    font-size: 14px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .tab-btn { 
+    padding: 14px 20px; 
+    font-size: 15px;
+    min-height: 48px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .pain-btn { 
+    font-size: 14px; 
+    min-height: 44px;
+    transition: font-size var(--transition-normal);
+  }
+  
+  .chip { 
+    padding: 12px 18px; 
+    font-size: 14px;
+    min-height: 48px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .radio-chip { 
+    padding: 12px 18px; 
+    font-size: 14px;
+    min-height: 48px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .btn { 
+    padding: 14px 28px; 
+    font-size: 15px;
+    min-height: 48px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .btn-sm { 
+    padding: 11px 20px; 
+    font-size: 14px;
+    min-height: 44px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .datetime-row { 
+    gap: 16px; 
+    transition: gap var(--transition-normal);
+  }
+  
+  .datetime-field { min-width: 180px; }
+  
+  .datetime-field input[type="date"],
+  .datetime-field input[type="time"],
+  .datetime-field input[type="datetime-local"] { 
+    font-size: 15px; 
+    padding: 14px 16px;
+    min-height: 48px;
+    transition: font-size var(--transition-normal), padding var(--transition-normal);
+  }
+  
+  .time-picker-input {
+    padding: 14px 16px;
+    font-size: 15px;
+    min-height: 48px;
+    transition: padding var(--transition-normal), font-size var(--transition-normal);
+  }
+  
+  .time-picker-panel {
+    width: 400px;
+    transition: width var(--transition-normal);
+  }
+  
+  .time-picker-display {
+    font-size: 36px;
+    transition: font-size var(--transition-normal);
+  }
+  
+  .record-card { 
+    padding: 20px; 
+    transition: padding var(--transition-normal);
+  }
+  
+  .record-card .rc-time { 
+    font-size: 20px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .record-card .rc-date { 
+    font-size: 13px; 
+    transition: font-size var(--transition-normal);
+  }
+  
+  .settings-item { 
+    gap: 16px; 
+    transition: gap var(--transition-normal);
+  }
+}
+
+/* Ultra-wide Desktop (≥ 1440px) */
+@media (min-width: 1440px) {
+  .app-container { 
+    max-width: 760px; 
+    transition: max-width var(--transition-normal);
+  }
+  
+  body {
+    background: 
+      var(--bg-primary),
+      linear-gradient(90deg, transparent 0%, rgba(124,197,234,0.03) 20%, rgba(124,197,234,0.06) 50%, rgba(124,197,234,0.03) 80%, transparent 100%);
+  }
+}
+
+/* Landscape orientation for mobile */
+@media (max-width: 767px) and (orientation: landscape) {
+  .app-container { padding: 8px 12px; }
+  .card { padding: 12px; }
+  .app-header { padding: 12px 0 8px; }
+  .mascot-icon { max-width: 50px; }
+  .app-header h1 { font-size: 18px; }
+  .pain-btn { font-size: 12px; min-height: 36px; }
+}
+
+/* Square screens (1:1 aspect ratio) */
+@media (min-aspect-ratio: 0.9) and (max-aspect-ratio: 1.1) {
+  .app-container {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+}
+
+/* Tall screens (portrait, > 18:9) */
+@media (max-aspect-ratio: 0.56) {
+  .cloud-deco {
+    opacity: 0.12;
+  }
+}
+
+/* Short/wide screens (landscape, < 4:3) */
+@media (min-aspect-ratio: 1.34) {
+  .app-container {
+    max-width: 800px;
+  }
 }
 
 /* ===== Print ===== */
