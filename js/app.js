@@ -124,19 +124,19 @@ const App = (() => {
   function initTheme() {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || savedTheme === 'dark') {
-      applyTheme(savedTheme, false);
+      applyTheme(savedTheme, false, true);
     } else {
-      applyTheme(getAutoTheme(), false);
+      applyTheme(getAutoTheme(), false, false);
     }
     setInterval(() => {
       const currentTheme = localStorage.getItem('theme');
       if (currentTheme !== 'light' && currentTheme !== 'dark') {
-        applyTheme(getAutoTheme(), false);
+        applyTheme(getAutoTheme(), false, false);
       }
     }, 60000);
   }
   
-  function applyTheme(theme, showToast) {
+  function applyTheme(theme, showToast, persist = true) {
     if (showToast === undefined) showToast = true;
     if (theme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -145,7 +145,9 @@ const App = (() => {
       document.documentElement.removeAttribute('data-theme');
       document.body.removeAttribute('data-theme');
     }
-    localStorage.setItem('theme', theme);
+    if (persist) {
+      localStorage.setItem('theme', theme);
+    }
     if (showToast) {
       showToast(`已切换到${theme === 'dark' ? '深色' : '浅色'}模式`, 'success');
     }
@@ -201,39 +203,10 @@ const App = (() => {
   }
 
   function updateSyncStatus(status) {
-    const dot = document.querySelector('#sync-dot');
-    const text = document.querySelector('#sync-text');
-    if (!dot || !text) return;
-    dot.className = 'dot ' + status;
-
-    /* idle 状态不显示文字，只保留圆点 */
-    if (status === 'idle') {
-      text.textContent = '';
-      return;
-    }
-
-    const msgs = {
-      synced: '已同步',
-      syncing: '同步中...',
-      error: '同步失败'
-    };
-    let label = msgs[status] || status;
-
-    /* 保存状态到 localStorage */
     localStorage.setItem('lastSyncStatus', status);
-
-    /* 保存最近一次成功同步时间 */
     if (status === 'synced') {
       localStorage.setItem('lastSyncTime', Date.now().toString());
     }
-    const lastTs = localStorage.getItem('lastSyncTime');
-    if (lastTs && status !== 'idle') {
-      const d = new Date(parseInt(lastTs, 10));
-      const pad = n => String(n).padStart(2, '0');
-      const timeStr = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      label += '（' + timeStr + '）';
-    }
-    text.textContent = label;
   }
 
   /* ---- Main UI ---- */
@@ -601,8 +574,8 @@ const App = (() => {
     const medications = collectMedications();
 
     const record = {
-      startTime: startTime + ':00',
-      endTime: endTime ? endTime + ':00' : null,
+      startTime: startTime.includes(':') ? startTime.replace(/:\d{2}$/, ':00') : startTime + ':00',
+      endTime: endTime ? (endTime.includes(':') ? endTime.replace(/:\d{2}$/, ':00') : endTime + ':00') : null,
       painLevel,
       painLocations,
       painType: painType || null,
@@ -665,7 +638,7 @@ const App = (() => {
       const time = row.querySelector('.med-time').value;
       const effect = parseInt(row.querySelector('.med-effect').value);
       if (name) {
-        meds.push({ name, dose: dose || null, time, effect: effect || null });
+        meds.push({ name, dose: dose || null, time, effect: effect === null || effect === undefined || isNaN(effect) ? null : effect });
       }
     });
     return meds;
@@ -678,7 +651,7 @@ const App = (() => {
   let histCustomEnd = '';
   let histSearch = '';
   let histPage = 1;
-  let histPageSize = 5;  // 5 | 10 | 20 | 50 | 'all'
+  let histPageSize = 5;  // 5 | 10 | 20 | 50 | -1 (all)
   let filteredRecords = [];
 
   function renderHistory(container) {
@@ -721,7 +694,7 @@ const App = (() => {
               <option value="10" ${histPageSize===10?'selected':''}>10条</option>
               <option value="20" ${histPageSize===20?'selected':''}>20条</option>
               <option value="50" ${histPageSize===50?'selected':''}>50条</option>
-              <option value="all" ${histPageSize==='all'?'selected':''}>全部</option>
+              <option value="-1" ${histPageSize===-1?'selected':''}>全部</option>
             </select>
           </div>
           <span class="history-count" id="hist-count">${filteredRecords.length} 条记录</span>
@@ -791,7 +764,7 @@ const App = (() => {
 
   function changePageSize() {
     const val = document.getElementById('page-size-select').value;
-    histPageSize = val === 'all' ? 'all' : parseInt(val);
+    histPageSize = parseInt(val);
     histPage = 1;
     refreshHistoryList();
   }
@@ -801,7 +774,7 @@ const App = (() => {
     filteredRecords = applyFilterAndSearch(allRecords);
     const countEl = document.getElementById('hist-count');
     if (countEl) countEl.textContent = `${filteredRecords.length} 条记录`;
-    const totalPages = histPageSize === 'all' ? 1 : Math.max(1, Math.ceil(filteredRecords.length / histPageSize));
+    const totalPages = histPageSize <= 0 ? 1 : Math.max(1, Math.ceil(filteredRecords.length / histPageSize));
     if (histPage > totalPages) histPage = totalPages;
     const wrap = document.getElementById('pagination-wrap');
     if (wrap) wrap.style.display = totalPages > 1 ? '' : 'none';
@@ -837,7 +810,7 @@ const App = (() => {
 
   function renderHistoryPage() {
     let pageRecords;
-    if (histPageSize === 'all') {
+    if (histPageSize <= 0) {
       pageRecords = filteredRecords;
     } else {
       const start = (histPage - 1) * histPageSize;
@@ -854,7 +827,7 @@ const App = (() => {
     const el = document.getElementById('pagination');
     if (!el) return;
 
-    if (histPageSize === 'all') { el.innerHTML = ''; return; }
+    if (histPageSize <= 0) { el.innerHTML = ''; return; }
 
     const totalPages = Math.max(1, Math.ceil(filteredRecords.length / histPageSize));
     if (totalPages <= 1) { el.innerHTML = ''; return; }
@@ -891,7 +864,7 @@ const App = (() => {
   }
 
   function goToPage(page) {
-    const totalPages = histPageSize === 'all' ? 1 : Math.ceil(filteredRecords.length / histPageSize);
+    const totalPages = histPageSize <= 0 ? 1 : Math.ceil(filteredRecords.length / histPageSize);
     if (page < 1 || page > totalPages) return;
     histPage = page;
     renderHistoryPage();
@@ -939,35 +912,6 @@ const App = (() => {
     const card = document.getElementById('rc-' + id);
     if (!card) return;
     card.classList.toggle('expanded');
-  }
-
-  /* Legacy alias - kept for backward compat */
-  function applyHistoryFilter() {
-    const filterEl = document.getElementById('hist-filter-dropdown');
-    if (filterEl) {
-      // New dropdown-based UI: use selectFilter + onHistorySearch
-      if (!histFilter) histFilter = 'all';
-      onHistorySearch();
-      return;
-    }
-    // Fallback for old select element
-    const filter = document.getElementById('hist-filter');
-    const search = document.getElementById('hist-search');
-    let records = Storage.getLocalRecords();
-    if (filter && filter.value !== 'all') {
-      const days = parseInt(filter.value);
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - days);
-      records = records.filter(r => new Date(r.startTime) >= cutoff);
-    }
-    if (search && search.value) {
-      records = records.filter(r => (r.notes || '').toLowerCase().includes(search.value.toLowerCase()));
-    }
-    records.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
-    const listEl = document.getElementById('history-list');
-    const countEl = document.getElementById('hist-count');
-    if (listEl) listEl.innerHTML = renderHistoryList(records);
-    if (countEl) countEl.textContent = records.length + ' 条记录';
   }
 
   function editRecord(id) {

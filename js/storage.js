@@ -194,7 +194,10 @@ const Storage = (() => {
 
   /* ---- Add a record ---- */
   function createUUID() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID().replace(/-/g, '');
+    }
+    return Date.now().toString(36) + Math.random().toString(36).substr(2, 9) + Math.random().toString(36).substr(2, 6);
   }
 
   async function addRecord(record) {
@@ -279,7 +282,7 @@ const Storage = (() => {
       const end = r.endTime ? new Date(r.endTime) : null;
       let duration = '';
       if (start && end) {
-        const diff = (end - start) / 60000;
+        const diff = Math.abs((end - start) / 60000);
         const h = Math.floor(diff / 60);
         const m = Math.round(diff % 60);
         duration = h > 0 ? h + '小时' + (m || '0') + '分钟' : m + '分钟';
@@ -290,6 +293,8 @@ const Storage = (() => {
         return map[id] || id;
       }).join('、');
       const typeMap = {throbbing:'搏动性',pressing:'压迫性',stabbing:'刺痛',dull:'钝痛',electric:'电击样',tearing:'撕裂感',burning:'烧灼感'};
+      const symptomMap = {nausea:'恶心',vomiting:'呕吐',photophobia:'畏光',phonophobia:'畏声',fatigue:'疲劳',dizziness:'头晕',sensitivity:'嗅觉过敏',visual:'视觉障碍',tinnitus:'耳鸣',speech:'言语障碍',numbness:'麻木',tingling:'针刺感'};
+      const triggerMap = {stress:'压力/焦虑',sleep_debt:'睡眠不足',sleep_excess:'睡眠过多',weather:'天气变化',food:'特定食物',alcohol:'酒精/红酒',caffeine:'咖啡因',hormones:'激素变化',exercise:'运动',travel:'旅行',smell:'气味刺激',noise:'噪音',light:'光线',other_trigger:'其他'};
 
       return [
         start ? start.toLocaleString('zh-CN') : '',
@@ -299,8 +304,8 @@ const Storage = (() => {
         loc,
         typeMap[r.painType] || r.painType || '',
         (r.aura || []).join('、'),
-        (r.symptoms || []).join('、'),
-        (r.triggers || []).join('、'),
+        (r.symptoms || []).map(id => symptomMap[id] || id).join('、'),
+        (r.triggers || []).map(id => triggerMap[id] || id).join('、'),
         meds,
         (r.notes || '').replace(/\n/g, ' ')
       ];
