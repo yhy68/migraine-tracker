@@ -1159,16 +1159,12 @@ const App = (() => {
         <div class="section-title">
           GitHub 同步配置
         </div>
-        <p>配置 GitHub Personal Access Token 以启用数据同步功能。</p>
+        <p>同步已自动配置，无需手动设置。</p>
         <div class="form-group">
           <label class="form-label">GitHub 用户名</label>
           <input type="text" class="form-input" id="config-username" value="${cfg.username || ''}" placeholder="GitHub 用户名" maxlength="50">
         </div>
-        <div class="form-group">
-          <label class="form-label">Personal Access Token</label>
-          <input type="password" class="form-input" id="config-token" value="${hasToken ? '***' : ''}" placeholder="输入 GitHub PAT" maxlength="255">
-          <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">需要 repo 权限的令牌。令牌仅存储在本地浏览器中。</p>
-        </div>
+        <input type="hidden" id="config-token" value="${cfg.token || ''}">
         <div class="form-group">
           <label class="form-label">数据仓库</label>
           <input type="text" class="form-input" id="config-repo" value="${cfg.dataRepo || ''}" placeholder="仓库名称" maxlength="100">
