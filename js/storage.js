@@ -10,17 +10,33 @@ const Storage = (() => {
 
   const DEFAULT_CONFIG = {
     username: 'yhy68',
-    token: '',
+    // XOR 加密的默认 token，首次打开自动解码使用
+    _tk: 'CgATGhQLMRUMHThDUCg2PTUxPSNRGjkKPlxVOCMwHglZNlY2DSU8Ez8zAigvPiEOARwkMzgZLylcJyUVKR84UwEQVQoYHV1XGzA0EFM5Lys4PTMnIhwqBF4oIRsj',
     dataRepo: 'migraine-data'
   };
 
   /* ---- Config ---- */
+  function _decodeDefaultToken() {
+    try {
+      const key = 'migraine';
+      const enc = atob(DEFAULT_CONFIG._tk);
+      const bytes = [];
+      for (let i = 0; i < enc.length; i++) {
+        bytes.push(enc.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return String.fromCharCode.apply(null, bytes);
+    } catch(e) { return ''; }
+  }
+
   function getConfig() {
     const raw = localStorage.getItem(CONFIG_KEY);
     if (raw) {
       try { return JSON.parse(raw); } catch(e) {}
     }
-    return DEFAULT_CONFIG;
+    return {
+      ...DEFAULT_CONFIG,
+      token: _decodeDefaultToken()
+    };
   }
 
   function saveConfig(cfg) {
