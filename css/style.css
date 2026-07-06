@@ -202,6 +202,7 @@ body {
 .sync-indicator .dot.synced { background: var(--success); }
 .sync-indicator .dot.syncing { background: var(--warning); animation: pulse 1s infinite; }
 .sync-indicator .dot.error { background: var(--danger); }
+.sync-time { margin-left: 2px; opacity: 0.65; font-variant-numeric: tabular-nums; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 /* ===== Tabs ===== */

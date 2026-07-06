@@ -113,6 +113,18 @@ const App = (() => {
     tryAutoSync();
     switchTab('record');
     updateThemeHint();
+
+    // 周期性后台同步：每30秒从云端拉取数据，实现多设备准实时同步
+    window._syncTimer = setInterval(() => {
+      if (!editingId) backgroundAutoSync();
+    }, 30000);
+
+    // 页面从后台恢复时立即同步一次
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && !editingId) {
+        setTimeout(backgroundAutoSync, 1000);
+      }
+    });
   }
   
   /* ---- Theme Management ---- */
@@ -202,10 +214,60 @@ const App = (() => {
     }
   }
 
+  async function backgroundAutoSync() {
+    const autoSync = localStorage.getItem('auto_sync') !== '0';
+    if (!autoSync) return;
+    updateSyncStatus('syncing');
+    try {
+      await Storage.backgroundSync();
+      updateSyncStatus('synced');
+      // 如果当前在历史页面，刷新列表
+      if (currentTab === 'history') refreshHistoryList();
+    } catch (e) {
+      console.error('Background sync failed:', e);
+      updateSyncStatus('error');
+    }
+  }
+
   function updateSyncStatus(status) {
     localStorage.setItem('lastSyncStatus', status);
     if (status === 'synced') {
       localStorage.setItem('lastSyncTime', Date.now().toString());
+    }
+    updateSyncIndicator();
+  }
+
+  function updateSyncIndicator() {
+    const dot = document.getElementById('sync-dot');
+    const text = document.getElementById('sync-text');
+    const time = document.getElementById('sync-time');
+    if (!dot || !text) return;
+
+    const status = localStorage.getItem('lastSyncStatus') || 'idle';
+    const lastTime = localStorage.getItem('lastSyncTime');
+
+    dot.className = 'dot ' + status;
+
+    switch (status) {
+      case 'synced':
+        text.textContent = '已同步';
+        break;
+      case 'syncing':
+        text.textContent = '同步中...';
+        break;
+      case 'error':
+        text.textContent = '同步失败';
+        break;
+      default:
+        text.textContent = '未同步';
+    }
+
+    if (time && lastTime) {
+      const d = new Date(parseInt(lastTime));
+      const pad = n => String(n).padStart(2, '0');
+      time.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    } else if (time) {
+      time.textContent = '';
     }
   }
 
@@ -692,7 +754,7 @@ const App = (() => {
       const autoSync = localStorage.getItem('auto_sync') !== '0';
       if (autoSync) {
         try {
-          await Storage.syncData();
+          await Storage.backgroundSync();
           updateSyncStatus('synced');
         } catch (e) {
           updateSyncStatus('error');
@@ -1064,7 +1126,7 @@ const App = (() => {
       // 立即同步到云端
       setTimeout(() => {
         updateSyncStatus('syncing');
-        Storage.syncData().then(() => {
+        Storage.backgroundSync().then(() => {
           updateSyncStatus('synced');
         }).catch(() => {
           updateSyncStatus('error');
@@ -1188,7 +1250,7 @@ const App = (() => {
       const merged = await Storage.importJSON(input.files[0]);
       showToast(`已导入，合并后共 ${merged.length} 条记录`, 'success');
       try {
-        await Storage.pushToGitHub(merged);
+        await Storage.backgroundSync();
         updateSyncStatus('synced');
       } catch(e) {
         updateSyncStatus('error');
@@ -1249,6 +1311,11 @@ const App = (() => {
       </svg>
       <h1>小云私の手账</h1>
       <div class="subtitle">记录每一天，温柔对待自己</div>
+      <div class="sync-indicator">
+        <span class="dot synced" id="sync-dot"></span>
+        <span id="sync-text">已同步</span>
+        <span class="sync-time" id="sync-time"></span>
+      </div>
     `;
     updateSyncStatus('synced');
   }

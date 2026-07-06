@@ -185,10 +185,39 @@ const Storage = (() => {
     
     // 推送到云端（不包含已删除的记录）
     await pushToGitHub(merged);
+    clearDirty();
     
     // 同步成功后，清除删除标记
     clearDeletedIds();
     
+    return merged;
+  }
+
+  /* ---- Dirty tracking for background sync ---- */
+  let _dirty = false;
+  function markDirty() { _dirty = true; }
+  function isDirty() { return _dirty; }
+  function clearDirty() { _dirty = false; }
+
+  /* ---- Background sync (pull+merge, only push if dirty) ---- */
+  async function backgroundSync() {
+    const cfg = getConfig();
+    if (!cfg || !cfg.token) return;
+
+    const local = getLocalRecords();
+    const deletedIds = getDeletedIds();
+    const { records: remote } = await pullFromGitHub();
+    const filteredRemote = remote.filter(r => !deletedIds.includes(r.id));
+    const filteredLocal = local.filter(r => !deletedIds.includes(r.id));
+    const merged = mergeRecords(filteredLocal, filteredRemote);
+
+    if (isDirty()) {
+      await pushToGitHub(merged);
+      clearDirty();
+      clearDeletedIds();
+    }
+
+    saveLocalRecords(merged);
     return merged;
   }
 
@@ -213,6 +242,7 @@ const Storage = (() => {
     const records = getLocalRecords();
     records.push(newRecord);
     saveLocalRecords(records);
+    markDirty();
 
     return newRecord;
   }
@@ -224,6 +254,7 @@ const Storage = (() => {
     if (idx === -1) throw new Error('Record not found');
     records[idx] = { ...records[idx], ...updates, updatedAt: new Date().toISOString() };
     saveLocalRecords(records);
+    markDirty();
     return records[idx];
   }
 
@@ -232,6 +263,7 @@ const Storage = (() => {
     const records = getLocalRecords();
     const filtered = records.filter(r => r.id !== id);
     saveLocalRecords(filtered);
+    markDirty();
     // 记录删除的ID，同步时过滤
     addDeletedId(id);
     return filtered;
@@ -260,6 +292,7 @@ const Storage = (() => {
           const local = getLocalRecords();
           const merged = mergeRecords(local, imported);
           saveLocalRecords(merged);
+          markDirty();
           resolve(merged);
         } catch (err) {
           reject(err);
@@ -293,7 +326,7 @@ const Storage = (() => {
         return map[id] || id;
       }).join('、');
       const typeMap = {throbbing:'搏动性',pressing:'压迫性',stabbing:'刺痛',dull:'钝痛',electric:'电击样',tearing:'撕裂感',burning:'烧灼感'};
-      const symptomMap = {nausea:'恶心',vomiting:'呕吐',photophobia:'畏光',phonophobia:'畏声',fatigue:'疲劳',dizziness:'头晕',sensitivity:'嗅觉过敏',visual:'视觉障碍',tinnitus:'耳鸣',speech:'言语障碍',numbness:'麻木',tingling:'针刺感'};
+      const symptomMap = {nausea:'恶心',vomiting:'呕吐',photophobia:'畏光',phonophobia:'畏声',fatigue:'疲劳',dizziness:'头晕',sensitivity:'嗅觉过敏',visual:'视觉障碍',tinnitus:'耳鸣',speech:'言语障碍',numbness:'麻木',tingling:'针刺感',neck_pain:'颈部僵硬',scalp_tender:'头皮触痛'};
       const triggerMap = {stress:'压力/焦虑',sleep_debt:'睡眠不足',sleep_excess:'睡眠过多',weather:'天气变化',food:'特定食物',alcohol:'酒精/红酒',caffeine:'咖啡因',hormones:'激素变化',exercise:'运动',travel:'旅行',smell:'气味刺激',noise:'噪音',light:'光线',other_trigger:'其他'};
 
       return [
@@ -303,7 +336,7 @@ const Storage = (() => {
         r.painLevel || '',
         loc,
         typeMap[r.painType] || r.painType || '',
-        (r.aura || []).join('、'),
+        (r.aura || []).map(id => {const auraMap={visual_blur:'视觉模糊',flashes:'闪光/暗点',yawning:'频繁打哈欠',fatigue:'疲劳',numbness:'肢体麻木',speech:'言语困难'};return auraMap[id]||id;}).join('、'),
         (r.symptoms || []).map(id => symptomMap[id] || id).join('、'),
         (r.triggers || []).map(id => triggerMap[id] || id).join('、'),
         meds,
@@ -348,6 +381,8 @@ const Storage = (() => {
     exportJSON,
     exportExcel,
     importJSON,
-    countRecords
+    countRecords,
+    backgroundSync,
+    isDirty
   };
 })();
