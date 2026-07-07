@@ -818,9 +818,7 @@ const App = (() => {
   let filteredRecords = [];
 
   function renderHistory(container) {
-    const allRecords = Storage.getLocalRecords().sort((a, b) =>
-      new Date(b.startTime) - new Date(a.startTime)
-    );
+    const allRecords = Storage.getLocalRecords();
     filteredRecords = applyFilterAndSearch(allRecords);
     histPage = 1;
 
