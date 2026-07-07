@@ -1138,8 +1138,6 @@ const App = (() => {
   /* ---- Backup & Settings ---- */
   function renderBackup(container) {
     const count = Storage.countRecords();
-    const cfg = Storage.getConfig();
-    const hasToken = cfg && cfg.token && cfg.token.length > 0;
     
     container.innerHTML = `
       <div class="card backup-section">
@@ -1157,29 +1155,11 @@ const App = (() => {
 
       <div class="card backup-section">
         <div class="section-title">
-          GitHub 同步配置
+          云端同步
         </div>
-        <p>同步已自动配置，无需手动设置。</p>
-        <div class="form-group">
-          <label class="form-label">GitHub 用户名</label>
-          <input type="text" class="form-input" id="config-username" value="${cfg.username || ''}" placeholder="GitHub 用户名" maxlength="50">
-        </div>
-        <input type="hidden" id="config-token" value="${cfg.token || ''}">
-        <div class="form-group">
-          <label class="form-label">数据仓库</label>
-          <input type="text" class="form-input" id="config-repo" value="${cfg.dataRepo || ''}" placeholder="仓库名称" maxlength="100">
-        </div>
-        <button class="btn btn-primary" style="width:auto" onclick="App.saveConfig()">保存配置</button>
-        ${hasToken ? '<p style="font-size:12px;color:var(--success);margin-top:8px;">✓ 已配置令牌</p>' : '<p style="font-size:12px;color:var(--warning);margin-top:8px;">⚠ 未配置令牌，同步功能不可用</p>'}
-      </div>
-
-      <div class="card backup-section">
-        <div class="section-title">
-          手动同步
-        </div>
-        <p>将本地记录与 GitHub 私有仓库同步。</p>
+        <p style="color:var(--text-secondary);font-size:13px;">数据已自动同步至云端私有仓库，支持多设备共享。</p>
         <div class="backup-actions" style="align-items: center;">
-          <button class="btn btn-secondary" style="width:auto" id="btn-sync" onclick="App.manualSync()" ${!hasToken ? 'disabled' : ''}>立即同步</button>
+          <button class="btn btn-secondary" style="width:auto" id="btn-sync" onclick="App.manualSync()">立即同步</button>
         </div>
       </div>
 
@@ -1203,7 +1183,7 @@ const App = (() => {
           <div class="settings-item">
             <label>自动同步（保存后同步到 GitHub）</label>
             <label class="toggle">
-              <input type="checkbox" id="auto-sync-toggle" ${hasToken ? 'checked' : ''} onchange="App.toggleAutoSync(this)" ${!hasToken ? 'disabled' : ''}>
+              <input type="checkbox" id="auto-sync-toggle" checked onchange="App.toggleAutoSync(this)">
               <span class="slider"></span>
             </label>
           </div>
