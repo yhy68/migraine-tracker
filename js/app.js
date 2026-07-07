@@ -764,8 +764,14 @@ const App = (() => {
         showToast('本地已保存，同步失败（下次联网自动重试）', 'info');
       }
 
-      const container = document.getElementById('tab-content');
-      renderRecordForm(container);
+      // 仅当用户仍在记录页面时才刷新表单，否则刷新对应页面
+      if (currentTab === 'record') {
+        const container = document.getElementById('tab-content');
+        renderRecordForm(container);
+      } else if (currentTab === 'history') {
+        // 用户已切换到历史页，刷新列表展示新记录
+        refreshHistoryList();
+      }
     } catch (e) {
       showToast('保存失败: ' + e.message, 'error');
     }
