@@ -791,6 +791,19 @@ textarea:focus { border-color: var(--c-blue); outline: none; box-shadow: 0 0 0 3
 .record-card .rc-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text); line-height: 1.7; }
 .record-card.expanded .rc-detail { display: block; }
 .record-card .rc-actions { display: flex; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+/* Batch mode */
+.record-card { display: flex; align-items: flex-start; gap: 10px; }
+.record-card .rc-body { flex: 1; min-width: 0; }
+.record-card .rc-checkbox { flex-shrink: 0; padding-top: 2px; }
+.record-card .rc-checkbox input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--c-blue); cursor: pointer; }
+.record-card.batch-selected { background: rgba(124, 197, 234, 0.12); border-color: var(--c-blue); }
+.batch-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin-top: 10px; background: var(--bg-card); border-radius: 10px; border: 1px solid var(--border); }
+.batch-bar .btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-sm.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); border-radius: 6px; cursor: pointer; }
+.btn-sm.btn-outline:hover { border-color: var(--c-blue); color: var(--c-blue); }
+.btn-sm.btn-outline.active { background: var(--c-blue); color: #fff; border-color: var(--c-blue); }
+
 .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
 .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; display: block; }
 .empty-state p { font-size: 14px; }

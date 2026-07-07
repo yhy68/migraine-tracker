@@ -1,10 +1,10 @@
-const CACHE_NAME = 'migraine-tracker-v1.10';
+const CACHE_NAME = 'migraine-tracker-v1.11';
 const ASSETS = [
   './',
   'index.html',
-  'css/style.css?v=1.10',
-  'js/storage.js?v=1.10',
-  'js/app.js?v=1.10',
+  'css/style.css?v=1.11',
+  'js/storage.js?v=1.11',
+  'js/app.js?v=1.11',
   'manifest.json'
 ];
 

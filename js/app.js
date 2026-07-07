@@ -816,6 +816,8 @@ const App = (() => {
   let histPage = 1;
   let histPageSize = 5;  // 5 | 10 | 20 | 50 | -1 (all)
   let filteredRecords = [];
+  let batchMode = false;             // 批量选择模式
+  let selectedIds = new Set();       // 批量选中的记录 ID
 
   function renderHistory(container) {
     const allRecords = Storage.getLocalRecords();
@@ -859,9 +861,17 @@ const App = (() => {
             </select>
           </div>
           <span class="history-count" id="hist-count">${filteredRecords.length} 条记录</span>
+          <button class="btn btn-sm btn-outline" id="btn-batch-mode" onclick="App.toggleBatchMode()" style="font-size:12px;white-space:nowrap;">批量选择</button>
         </div>
 
         <div id="history-list"></div>
+
+        <!-- Batch action bar -->
+        <div class="batch-bar" id="batch-bar" style="display:none;">
+          <button class="btn btn-sm btn-secondary" onclick="App.selectAllPage()">全选本页</button>
+          <span id="batch-count" style="font-size:13px;color:var(--text-secondary);">已选 0 条</span>
+          <button class="btn btn-sm btn-danger" id="btn-batch-delete" onclick="App.confirmBatchDelete()" disabled>删除选中</button>
+        </div>
         <div class="pagination-wrap" id="pagination-wrap">
           <div class="pagination" id="pagination"></div>
         </div>
@@ -1092,8 +1102,15 @@ const App = (() => {
       return `<div class="empty-state"><span class="empty-icon">&#x1F4CB;</span><p>还没有记录</p><p style="font-size:12px;">切换到「记录」页面开始记录</p></div>`;
     }
 
-    return records.map(r => `
-      <div class="record-card" id="rc-${r.id}" onclick="App.toggleRecordDetail('${r.id}')">
+    return records.map(r => {
+      const isSelected = selectedIds.has(r.id);
+      const clickHandler = batchMode
+        ? `App.toggleSelectRecord(event, '${r.id}')`
+        : `App.toggleRecordDetail('${r.id}')`;
+      return `
+      <div class="record-card ${isSelected ? 'batch-selected' : ''}" id="rc-${r.id}" onclick="${clickHandler}">
+        ${batchMode ? `<div class="rc-checkbox" onclick="event.stopPropagation();App.toggleSelectRecord(event,'${r.id}')"><input type="checkbox" ${isSelected ? 'checked' : ''}></div>` : ''}
+        <div class="rc-body">
         <div class="rc-header">
           <div>
             <div class="rc-date">${formatDate(r.startTime)}</div>
@@ -1118,8 +1135,9 @@ const App = (() => {
             <button class="btn btn-sm btn-danger" onclick="App.confirmDelete('${r.id}')">删除</button>
           </div>
         </div>
+        </div>
       </div>
-    `).join('');
+    `}).join('');
   }
 
   function toggleRecordDetail(id) {
@@ -1147,6 +1165,83 @@ const App = (() => {
         updateSyncStatus('error');
       });
     }
+  }
+
+  /* ---- Batch Operations ---- */
+  function toggleBatchMode() {
+    batchMode = !batchMode;
+    if (!batchMode) {
+      selectedIds.clear();
+    }
+    updateBatchUI();
+    renderHistoryPage();
+  }
+
+  function toggleSelectRecord(event, id) {
+    if (!batchMode) return;
+    event.stopPropagation();
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+    } else {
+      selectedIds.add(id);
+    }
+    updateBatchUI();
+    // 只更新当前记录的选中状态，不完全重渲染
+    const card = document.getElementById('rc-' + id);
+    if (card) {
+      card.classList.toggle('batch-selected', selectedIds.has(id));
+      const cb = card.querySelector('.rc-checkbox input');
+      if (cb) cb.checked = selectedIds.has(id);
+    }
+  }
+
+  function selectAllPage() {
+    const allRecords = Storage.getLocalRecords();
+    const pageRecords = getCurrentPageRecords(allRecords);
+    pageRecords.forEach(r => selectedIds.add(r.id));
+    updateBatchUI();
+    renderHistoryPage();
+  }
+
+  function getCurrentPageRecords(allRecords) {
+    if (histPageSize <= 0) return allRecords;
+    const start = (histPage - 1) * histPageSize;
+    return allRecords.slice(start, start + histPageSize);
+  }
+
+  function updateBatchUI() {
+    const bar = document.getElementById('batch-bar');
+    const countEl = document.getElementById('batch-count');
+    const delBtn = document.getElementById('btn-batch-delete');
+    const modeBtn = document.getElementById('btn-batch-mode');
+
+    if (bar) bar.style.display = batchMode ? 'flex' : 'none';
+    if (modeBtn) {
+      modeBtn.textContent = batchMode ? '退出选择' : '批量选择';
+      modeBtn.classList.toggle('active', batchMode);
+    }
+    if (countEl) countEl.textContent = `已选 ${selectedIds.size} 条`;
+    if (delBtn) delBtn.disabled = selectedIds.size === 0;
+  }
+
+  function confirmBatchDelete() {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`确定要删除选中的 ${selectedIds.size} 条记录吗？此操作不可撤销。`)) return;
+
+    const ids = Array.from(selectedIds);
+    ids.forEach(id => Storage.deleteRecord(id));
+    selectedIds.clear();
+    batchMode = false;
+    showToast(`已删除 ${ids.length} 条记录`, 'success');
+    refreshHistoryList();
+
+    // 立即同步到云端
+    updateSyncStatus('syncing');
+    Storage.syncData().then(() => {
+      updateSyncStatus('synced');
+    }).catch(() => {
+      updateSyncStatus('error');
+    });
   }
 
   /* ---- Backup & Settings ---- */
@@ -1383,6 +1478,10 @@ const App = (() => {
     cancelEdit,
     editRecord,
     confirmDelete,
+    toggleBatchMode,
+    toggleSelectRecord,
+    selectAllPage,
+    confirmBatchDelete,
     setFilter,
     toggleCustomRange,
     applyCustomRange,
