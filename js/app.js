@@ -198,19 +198,14 @@ const App = (() => {
 
   /* ---- Auto Sync ---- */
   async function tryAutoSync() {
-    const autoSync = localStorage.getItem('auto_sync') !== '0';
-    if (!autoSync) {
-      const lastSt = localStorage.getItem('lastSyncStatus') || 'idle';
-      updateSyncStatus(lastSt);
-      return;
-    }
     updateSyncStatus('syncing');
     try {
-      await Storage.syncData();
+      await Storage.backgroundSync();
       updateSyncStatus('synced');
     } catch (e) {
       console.error('Sync failed:', e);
-      updateSyncStatus('error');
+      const lastSt = localStorage.getItem('lastSyncStatus') || 'idle';
+      updateSyncStatus(lastSt);
     }
   }
 
@@ -751,15 +746,14 @@ const App = (() => {
         showToast('记录已保存', 'success');
       }
 
-      const autoSync = localStorage.getItem('auto_sync') !== '0';
-      if (autoSync) {
-        try {
-          await Storage.backgroundSync();
-          updateSyncStatus('synced');
-        } catch (e) {
-          updateSyncStatus('error');
-          showToast('本地已保存，同步失败（下次联网自动重试）', 'info');
-        }
+      // 立即同步到云端
+      try {
+        updateSyncStatus('syncing');
+        await Storage.syncData();
+        updateSyncStatus('synced');
+      } catch (e) {
+        updateSyncStatus('error');
+        showToast('本地已保存，同步失败（下次联网自动重试）', 'info');
       }
 
       const container = document.getElementById('tab-content');
@@ -1126,7 +1120,7 @@ const App = (() => {
       // 立即同步到云端
       setTimeout(() => {
         updateSyncStatus('syncing');
-        Storage.backgroundSync().then(() => {
+        Storage.syncData().then(() => {
           updateSyncStatus('synced');
         }).catch(() => {
           updateSyncStatus('error');
