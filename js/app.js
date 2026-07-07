@@ -724,8 +724,8 @@ const App = (() => {
     const sanitizedNotes = escapeHtml(notes);
 
     const record = {
-      startTime: startTime.includes(':') ? startTime.replace(/:\d{2}$/, ':00') : startTime + ':00',
-      endTime: endTime ? (endTime.includes(':') ? endTime.replace(/:\d{2}$/, ':00') : endTime + ':00') : null,
+      startTime: startTime.includes(':') ? startTime + (startTime.match(/:\d{2}$/) ? '' : ':00') : startTime + ':00',
+      endTime: endTime ? (endTime.includes(':') ? endTime + (endTime.match(/:\d{2}$/) ? '' : ':00') : endTime + ':00') : null,
       painLevel,
       painLocations,
       painType: painType || null,
