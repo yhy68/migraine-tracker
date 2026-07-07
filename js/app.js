@@ -1136,14 +1136,12 @@ const App = (() => {
       refreshHistoryList();
       
       // 立即同步到云端
-      setTimeout(() => {
-        updateSyncStatus('syncing');
-        Storage.syncData().then(() => {
-          updateSyncStatus('synced');
-        }).catch(() => {
-          updateSyncStatus('error');
-        });
-      }, 500);
+      updateSyncStatus('syncing');
+      Storage.syncData().then(() => {
+        updateSyncStatus('synced');
+      }).catch(() => {
+        updateSyncStatus('error');
+      });
     }
   }
 
@@ -1238,10 +1236,12 @@ const App = (() => {
       const merged = await Storage.importJSON(input.files[0]);
       showToast(`已导入，合并后共 ${merged.length} 条记录`, 'success');
       try {
-        await Storage.backgroundSync();
+        updateSyncStatus('syncing');
+        await Storage.syncData();
         updateSyncStatus('synced');
       } catch(e) {
         updateSyncStatus('error');
+        showToast('本地已导入，同步失败（下次联网自动重试）', 'info');
       }
     } catch (e) {
       showToast('导入失败: 文件格式不正确', 'error');

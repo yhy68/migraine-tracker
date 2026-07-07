@@ -108,6 +108,10 @@ const Storage = (() => {
       throw new Error('404');
     }
 
+    if (resp.status === 409) {
+      throw new Error('409');
+    }
+
     if (!resp.ok) {
       const errData = await resp.json().catch(() => ({}));
       throw new Error(errData.message || 'HTTP ' + resp.status);
@@ -136,7 +140,7 @@ const Storage = (() => {
   }
 
   /* ---- Push data to GitHub ---- */
-  async function pushToGitHub(records) {
+  async function pushToGitHub(records, retries = 2) {
     const cfg = getConfig();
     if (!cfg) throw new Error('Not configured');
 
@@ -147,19 +151,34 @@ const Storage = (() => {
       content: encodeBase64(content)
     };
 
-    let sha = null;
-    try {
-      const existing = await githubRequest('GET', url);
-      sha = existing.sha;
-    } catch (e) {
-      /* File doesn't exist yet */
-    }
+    let lastErr = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      let sha = null;
+      try {
+        const existing = await githubRequest('GET', url);
+        sha = existing.sha;
+      } catch (e) {
+        /* File doesn't exist yet */
+      }
 
-    if (sha) {
-      body.sha = sha;
-    }
+      if (sha) {
+        body.sha = sha;
+      }
 
-    return githubRequest('PUT', url, body);
+      try {
+        return await githubRequest('PUT', url, body);
+      } catch (e) {
+        // 409: SHA conflict — another device pushed simultaneously, retry
+        if (e.message === '409' && attempt < retries) {
+          lastErr = e;
+          // brief delay to let the other push finalize
+          await new Promise(r => setTimeout(r, 300));
+          continue;
+        }
+        throw e;
+      }
+    }
+    throw lastErr || new Error('Push failed after retries');
   }
 
   /* ---- Merge: local vs remote ---- */
