@@ -298,15 +298,50 @@ const Storage = (() => {
     URL.revokeObjectURL(url);
   }
 
+  function validateRecord(r) {
+    if (!r || typeof r !== 'object' || !r.id || !r.startTime) return null;
+    // 清洗备注中的 XSS
+    const cleaned = { ...r };
+    if (typeof cleaned.notes === 'string') {
+      const div = typeof document !== 'undefined' ? document.createElement('div') : null;
+      if (div) { div.textContent = cleaned.notes; cleaned.notes = div.innerHTML; }
+    }
+    // 清洗用药名称
+    if (Array.isArray(cleaned.medications)) {
+      cleaned.medications = cleaned.medications.map(m => {
+        if (typeof m.name === 'string') {
+          const div = typeof document !== 'undefined' ? document.createElement('div') : null;
+          const escaped = { ...m };
+          if (div) { div.textContent = m.name; escaped.name = div.innerHTML; }
+          if (div && typeof m.dose === 'string') { div.textContent = m.dose; escaped.dose = div.innerHTML; }
+          return escaped;
+        }
+        return m;
+      });
+    }
+    // 截断过长的字段
+    if (typeof cleaned.notes === 'string' && cleaned.notes.length > 5000) {
+      cleaned.notes = cleaned.notes.slice(0, 5000);
+    }
+    return cleaned;
+  }
+
   function importJSON(file) {
     return new Promise((resolve, reject) => {
+      if (file.size > 10 * 1024 * 1024) {
+        reject(new Error('文件过大（最大10MB）'));
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const imported = JSON.parse(e.target.result);
           if (!Array.isArray(imported)) throw new Error('Invalid format');
+          // 校验并清洗每条记录
+          const validated = imported.map(r => validateRecord(r)).filter(r => r !== null);
+          if (validated.length === 0) throw new Error('导入的文件中没有有效记录');
           const local = getLocalRecords();
-          const merged = mergeRecords(local, imported);
+          const merged = mergeRecords(local, validated);
           saveLocalRecords(merged);
           markDirty();
           resolve(merged);
@@ -374,11 +409,22 @@ const Storage = (() => {
 
   /* ---- Base64 helpers ---- */
   function encodeBase64(str) {
-    return btoa(unescape(encodeURIComponent(str)));
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(str);
+    let binary = '';
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
   }
 
   function decodeBase64(str) {
-    return decodeURIComponent(escape(atob(str)));
+    const binary = atob(str);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
   }
 
   /* ---- Public API ---- */

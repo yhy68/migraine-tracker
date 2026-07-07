@@ -202,6 +202,8 @@ const App = (() => {
     try {
       await Storage.backgroundSync();
       updateSyncStatus('synced');
+      // 如果当前在历史页面，刷新列表
+      if (currentTab === 'history') refreshHistoryList();
     } catch (e) {
       console.error('Sync failed:', e);
       const lastSt = localStorage.getItem('lastSyncStatus') || 'idle';
@@ -514,14 +516,20 @@ const App = (() => {
   function renderMedRow(data) {
     const idx = Math.random().toString(36).substr(2, 4);
     const d = data || MY_MED;
+    const isPreset = d.name ? MED_PRESETS.includes(d.name) : true;
     const selected = d.name || MY_MED.name;
-    return `
-      <div class="med-row" data-med-row="${idx}">
+
+    const nameField = isPreset ? `
         <select class="med-name" onchange="App.onMedSelect(this)">
           <option value="">选择药品...</option>
           ${MED_PRESETS.map(m => `<option value="${m}" ${m===selected?'selected':''}>${m}</option>`).join('')}
           <option value="__custom__">其他（手动输入）</option>
-        </select>
+        </select>` : `
+        <input class="med-name" type="text" value="${d.name || ''}" placeholder="药名" autocomplete="off" style="flex:2;min-width:100px;padding:8px 10px;border-radius:6px;border:1.5px solid var(--border);background:var(--bg-card);color:var(--text);font-size:13px;">`;
+
+    return `
+      <div class="med-row" data-med-row="${idx}">
+        ${nameField}
         <input class="med-dose" placeholder="剂量" value="${d.dose || ''}" autocomplete="off">
         <input class="med-time" type="time" value="${d.time || ''}">
         <select class="med-effect">
@@ -835,7 +843,7 @@ const App = (() => {
 
         <!-- Toolbar: search + page size + count -->
         <div class="history-toolbar">
-          <input type="text" id="hist-search" placeholder="搜索备注..." oninput="App.onHistorySearch()" autocomplete="off" value="${histSearch}">
+          <input type="text" id="hist-search" placeholder="搜索记录..." oninput="App.onHistorySearch()" autocomplete="off" value="${histSearch}">
           <div class="page-size-selector">
             <span class="page-size-label">每页</span>
             <select id="page-size-select" onchange="App.changePageSize()">
@@ -993,7 +1001,17 @@ const App = (() => {
       result = result.filter(r => new Date(r.startTime) >= cutoff);
     }
     if (histSearch) {
-      result = result.filter(r => (r.notes || '').toLowerCase().includes(histSearch));
+      result = result.filter(r => {
+        const searchFields = [
+          r.notes || '',
+          (r.medications || []).map(m => (m.name || '') + ' ' + (m.dose || '')).join(' '),
+          (r.triggers || []).map(t => getTriggerLabel(t)).join(' '),
+          (r.symptoms || []).map(s => getSymptomLabel(s)).join(' '),
+          getPainTypeLabel(r.painType || ''),
+          (r.painLocations || []).map(l => getLocationLabel(l)).join(' ')
+        ];
+        return searchFields.join(' ').toLowerCase().includes(histSearch);
+      });
     }
     
     result.sort((a, b) => new Date(b.startTime) - new Date(a.startTime));
@@ -1082,14 +1100,14 @@ const App = (() => {
         <div class="rc-tags">
           ${(r.painLocations||[]).map(l => `<span class="rc-tag">${getLocationLabel(l)}</span>`).join('')}
           ${(r.triggers||[]).slice(0,2).map(t => `<span class="rc-tag">${getTriggerLabel(t)}</span>`).join('')}
-          ${r.medications&&r.medications.length>0 ? `<span class="rc-tag">用药: ${r.medications.map(m=>m.name).join(',')}</span>` : ''}
+          ${r.medications&&r.medications.length>0 ? `<span class="rc-tag">用药: ${r.medications.map(m=>escapeHtml(m.name)).join(',')}</span>` : ''}
         </div>
         <div class="rc-detail">
           ${r.painType ? `<div>类型: ${getPainTypeLabel(r.painType)}</div>` : ''}
           ${r.aura&&r.aura.length>0 ? `<div>前驱: ${r.aura.map(a=>getAuraLabel(a)).join('、')}</div>` : ''}
           ${r.symptoms&&r.symptoms.length>0 ? `<div>症状: ${r.symptoms.map(s=>getSymptomLabel(s)).join('、')}</div>` : ''}
           ${r.triggers&&r.triggers.length>0 ? `<div>诱因: ${r.triggers.map(t=>getTriggerLabel(t)).join('、')}</div>` : ''}
-          ${r.medications&&r.medications.length>0 ? `<div>用药: ${r.medications.map(m=>`${m.name} ${m.dose||''} ${m.time||''} ${m.effect?'效果'+(m.effect)+'/5':''}`).join('; ')}</div>` : ''}
+          ${r.medications&&r.medications.length>0 ? `<div>用药: ${r.medications.map(m=>`${escapeHtml(m.name)} ${escapeHtml(m.dose||'')} ${escapeHtml(m.time||'')} ${m.effect?'效果'+(m.effect)+'/5':''}`).join('; ')}</div>` : ''}
           ${r.notes ? `<div style="margin-top:4px;padding:8px;background:var(--bg);border-radius:6px;">备注: ${r.notes}</div>` : ''}
           <div class="rc-actions" onclick="event.stopPropagation()">
             <button class="btn btn-sm btn-secondary" onclick="App.editRecord('${r.id}')">编辑</button>
@@ -1235,29 +1253,6 @@ const App = (() => {
     localStorage.setItem('auto_sync', toggle.checked ? '1' : '0');
   }
 
-  function saveConfig() {
-    const username = document.getElementById('config-username').value.trim();
-    const token = document.getElementById('config-token').value.trim();
-    const repo = document.getElementById('config-repo').value.trim();
-    
-    if (!username) {
-      showToast('请输入 GitHub 用户名', 'error');
-      return;
-    }
-    if (!token || token === '***') {
-      showToast('请输入 Personal Access Token', 'error');
-      return;
-    }
-    if (!repo) {
-      showToast('请输入仓库名称', 'error');
-      return;
-    }
-    
-    Storage.saveConfig({ username, token, dataRepo: repo });
-    showToast('配置已保存', 'success');
-    renderBackup(document.getElementById('tab-content'));
-  }
-
   /* ---- Header ---- */
   function renderHeader() {
     const header = document.getElementById('header');
@@ -1322,7 +1317,7 @@ const App = (() => {
 
   function calcDuration(start, end) {
     if (!end) return '?';
-    const ms = new Date(end) - new Date(start);
+    const ms = Math.abs(new Date(end) - new Date(start));
     const hrs = Math.floor(ms / 3600000);
     const mins = Math.floor((ms % 3600000) / 60000);
     if (hrs === 0) return mins + '分钟';
