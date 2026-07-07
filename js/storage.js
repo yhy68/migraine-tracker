@@ -11,7 +11,7 @@ const Storage = (() => {
   const DEFAULT_CONFIG = {
     username: 'yhy68',
     // XOR 加密的默认 token，首次打开自动解码使用
-    _tk: 'CgATGhQLMRUMHThDUCg2PTUxPSNRGjkKPlxVOCMwHglZNlY2DSU8Ez8zAigvPiEOARwkMzgZLylcJyUVKR84UwEQVQoYHV1XGzA0EFM5Lys4PTMnIhwqBF4oIRsj',
+    _tk: 'CgATGhQLMRUMHThDUCg2PTUxPSNRIBgMHygMHRURVhI7NhMqDTgJAyU7KCsmBSATDD4wGDtcH1ZeDy0WVjA0LhRcKwcwHhQ/PjwXECs4LyonXTcrVConCx0vExYH',
     dataRepo: 'migraine-data'
   };
 
