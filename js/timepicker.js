@@ -109,9 +109,23 @@ class TimePicker {
       return `<div class="time-picker-wheel-item ${isSelected ? 'selected' : ''}" data-value="${item}">${display}</div>`;
     }).join('');
     
+    // 首次渲染后动态测量实际 item 高度（代替硬编码 36px）
+    if (!this._measuredHeight) {
+      this.measureItemHeight(inner);
+    }
+    
     this.scrollToSelected(type);
   }
   
+  measureItemHeight(inner) {
+    const first = inner.querySelector('.time-picker-wheel-item');
+    if (first) {
+      this.itemHeight = first.offsetHeight || 36;
+      this._measuredHeight = true;
+    }
+  }
+  
+
   scrollToSelected(type, animate = true) {
     const inner = this.panel.querySelector(`[data-wheel="${type}"] .time-picker-wheel-inner`);
     if (!inner) return;
