@@ -1819,8 +1819,7 @@ body, .card, input, select, textarea, button {
 }
 .time-picker-quick-btn:active { transform: scale(0.98); }
 .time-picker-wheel {
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
+  touch-action: none;
   user-select: none;
 }
 .time-picker-wheel::-webkit-scrollbar {
