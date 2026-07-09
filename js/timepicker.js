@@ -155,6 +155,7 @@ class TimePicker {
       wheel.addEventListener('touchstart', (e) => this.onDragStart(e, wheel));
       wheel.addEventListener('touchmove', (e) => this.onDragMove(e));
       wheel.addEventListener('touchend', () => this.onDragEnd());
+      wheel.addEventListener('touchcancel', () => this.onDragEnd());
       
       wheel.addEventListener('mousedown', (e) => this.onDragStart(e, wheel));
       wheel.addEventListener('wheel', (e) => this.onWheel(e, wheel), { passive: false });
@@ -243,7 +244,8 @@ class TimePicker {
   onDragEnd() {
     if (!this.isDragging || !this.dragWheel) return;
     
-    const inner = this.panel.querySelector(`[data-wheel="${this.dragWheel}"] .time-picker-wheel-inner`);
+    const wheelType = this.dragWheel;
+    const inner = this.panel.querySelector(`[data-wheel="${wheelType}"] .time-picker-wheel-inner`);
     const transform = inner.style.transform;
     const match = transform.match(/translateY\(-?(\d+)px\)/);
     const offset = match ? parseInt(match[1]) : 0;
@@ -252,13 +254,15 @@ class TimePicker {
     const relativeOffset = offset + centerOffset;
     const itemIndex = Math.round(relativeOffset / this.itemHeight);
     
-    const maxItems = this.dragWheel === 'hour' ? 24 : 60;
+    const maxItems = wheelType === 'hour' ? 24 : 60;
     const clampedIndex = Math.max(0, Math.min(maxItems - 1, itemIndex));
     
-    this.selectValue(this.dragWheel, clampedIndex);
-    
+    // 先清除拖拽状态，再 selectValue，让 updateValue 能正常重新渲染
     this.isDragging = false;
     this.dragWheel = null;
+    this._dragMoved = false;
+    
+    this.selectValue(wheelType, clampedIndex);
   }
   
   handleAmpmClick(ampm) {
@@ -328,7 +332,10 @@ class TimePicker {
     this.value = `${h}:${m}`;
     this.input.value = this.value;
     this.updateDisplay();
-    this.renderWheels();
+    // 拖拽中不重绘 DOM，避免与 touchmove 冲突
+    if (!this.isDragging) {
+      this.renderWheels();
+    }
     this.onChange(this.value);
   }
   
