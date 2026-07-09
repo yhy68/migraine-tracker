@@ -162,6 +162,8 @@ class TimePicker {
   }
   
   onWheel(e, wheel) {
+    // 拖拽中忽略 wheel 事件，防止与 touchmove 冲突导致显示不同步
+    if (this.isDragging) return;
     e.preventDefault();
     const wheelType = wheel.dataset.wheel;
     const delta = e.deltaY > 0 ? 1 : -1;
