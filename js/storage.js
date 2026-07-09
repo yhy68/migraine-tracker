@@ -380,6 +380,8 @@ const Storage = (() => {
   /* ---- Excel Export ---- */
   function exportExcel() {
     const records = getLocalRecords();
+    const pad = n => String(n).padStart(2, '0');
+    const fmtDateTime = d => d ? `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}` : '';
     const rows = records.map(r => {
       const start = r.startTime ? new Date(r.startTime) : null;
       const end = r.endTime ? new Date(r.endTime) : null;
@@ -400,8 +402,8 @@ const Storage = (() => {
       const triggerMap = {stress:'压力/焦虑',sleep_debt:'睡眠不足',sleep_excess:'睡眠过多',weather:'天气变化',food:'特定食物',alcohol:'酒精/红酒',caffeine:'咖啡因',hormones:'激素变化',exercise:'运动',travel:'旅行',smell:'气味刺激',noise:'噪音',light:'光线',other_trigger:'其他'};
 
       return [
-        start ? start.toLocaleString('zh-CN') : '',
-        end ? end.toLocaleString('zh-CN') : '',
+        fmtDateTime(start),
+        fmtDateTime(end),
         duration,
         r.painLevel || '',
         loc,
