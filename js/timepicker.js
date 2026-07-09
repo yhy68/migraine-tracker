@@ -175,7 +175,10 @@ class TimePicker {
   
   onDragStart(e, wheel) {
     e.preventDefault();
+    // 如果已在拖拽中（移动端 touch+mouse 双重触发），忽略第二次
+    if (this.isDragging) return;
     this.isDragging = true;
+    this._dragMoved = false;
     this.dragWheel = wheel.dataset.wheel;
     
     const point = e.touches ? e.touches[0] : e;
@@ -192,6 +195,7 @@ class TimePicker {
   onDragMove(e) {
     if (!this.isDragging || !this.dragWheel) return;
     e.preventDefault();
+    this._dragMoved = true;
     
     const point = e.touches ? e.touches[0] : e;
     const deltaY = point.clientY - this.startY;
@@ -397,6 +401,12 @@ class TimePicker {
     
     this.panel.addEventListener('click', (e) => {
       const target = e.target;
+      
+      // 拖拽操作后忽略 click 事件，防止松手时误点击导致回弹
+      if (this._dragMoved) {
+        this._dragMoved = false;
+        return;
+      }
       
       if (target.classList.contains('time-picker-ampm-btn')) {
         this.handleAmpmClick(target.dataset.ampm);
