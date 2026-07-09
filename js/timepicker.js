@@ -225,6 +225,12 @@ class TimePicker {
       this.minute = clampedIndex;
     }
     
+    // 实时更新存储值，防止 open() 被重新调用时回退
+    const h = String(this.hour).padStart(2, '0');
+    const m = String(this.minute).padStart(2, '0');
+    this.value = `${h}:${m}`;
+    this.input.value = this.value;
+    
     this.updateDisplay();
     this.updateWheelSelection();
   }
@@ -348,6 +354,8 @@ class TimePicker {
   }
   
   open() {
+    // 防止重复调用（尤其是 focus 事件回调中的二次 open）
+    if (this.isOpen) return;
     if (this.value) {
       const [h, m] = this.value.split(':').map(Number);
       if (!isNaN(h) && !isNaN(m)) {
@@ -363,10 +371,6 @@ class TimePicker {
     this.renderWheels();
     this.panel.classList.add('show');
     this.isOpen = true;
-    
-    setTimeout(() => {
-      this.input.focus();
-    }, 100);
   }
   
   close() {
