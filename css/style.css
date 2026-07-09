@@ -1751,13 +1751,19 @@ body, .card, input, select, textarea, button {
   transition: transform 0.2s ease;
 }
 .time-picker-wheel-item {
-  padding: 10px 0;
+  padding: 0;
+  height: 36px;
+  line-height: 36px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .time-picker-wheel-item:hover {
   color: var(--c-blue-deep);
