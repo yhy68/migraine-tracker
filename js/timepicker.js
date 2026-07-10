@@ -16,6 +16,7 @@ class TimePicker {
     this.dragWheel = null;
     this.startY = 0;
     this.currentOffset = 0;
+    this._dragOffset = 0;
     this.itemHeight = 36;
     this.wheelHeight = 140;
     
@@ -192,7 +193,6 @@ class TimePicker {
   
   onDragStart(e, wheel) {
     e.preventDefault();
-    // 如果已在拖拽中（移动端 touch+mouse 双重触发），忽略第二次
     if (this.isDragging) return;
     this.isDragging = true;
     this._dragMoved = false;
@@ -202,9 +202,12 @@ class TimePicker {
     this.startY = point.clientY;
     
     const inner = wheel.querySelector('.time-picker-wheel-inner');
-    const transform = inner.style.transform;
-    const match = transform.match(/translateY\(-?(\d+)px\)/);
-    this.currentOffset = match ? parseInt(match[1]) : 0;
+    const selectedItem = inner.querySelector('.time-picker-wheel-item.selected');
+    if (selectedItem) {
+      this.currentOffset = selectedItem.offsetTop - (this.wheelHeight / 2) + (this.itemHeight / 2);
+    } else {
+      this.currentOffset = 0;
+    }
     
     inner.style.transition = 'none';
   }
@@ -218,6 +221,8 @@ class TimePicker {
     const deltaY = point.clientY - this.startY;
     
     const newOffset = this.currentOffset - deltaY;
+    this._dragOffset = newOffset;
+    
     const inner = this.panel.querySelector(`[data-wheel="${this.dragWheel}"] .time-picker-wheel-inner`);
     
     inner.style.transform = `translateY(-${newOffset}px)`;
@@ -265,10 +270,7 @@ class TimePicker {
     if (!this.isDragging || !this.dragWheel) return;
     
     const wheelType = this.dragWheel;
-    const inner = this.panel.querySelector(`[data-wheel="${wheelType}"] .time-picker-wheel-inner`);
-    const transform = inner.style.transform;
-    const match = transform.match(/translateY\(-?(\d+)px\)/);
-    const offset = match ? parseInt(match[1]) : 0;
+    const offset = this._dragOffset;
     
     const centerOffset = this.wheelHeight / 2 - this.itemHeight / 2;
     const relativeOffset = offset + centerOffset;
@@ -277,7 +279,6 @@ class TimePicker {
     const maxItems = wheelType === 'hour' ? 24 : 60;
     const clampedIndex = Math.max(0, Math.min(maxItems - 1, itemIndex));
     
-    // 先清除拖拽状态，再 selectValue，让 updateValue 能正常重新渲染
     this.isDragging = false;
     this.dragWheel = null;
     this._dragMoved = false;
@@ -368,7 +369,6 @@ class TimePicker {
   }
   
   open() {
-    // 防止重复调用（尤其是 focus 事件回调中的二次 open）
     if (this.isOpen) return;
     if (this.value) {
       const [h, m] = this.value.split(':').map(Number);
@@ -381,10 +381,15 @@ class TimePicker {
       this.hour = now.getHours();
       this.minute = now.getMinutes();
     }
-    this.updateDisplay();
-    this.renderWheels();
     this.panel.classList.add('show');
     this.isOpen = true;
+    
+    this._measuredHeight = false;
+    
+    requestAnimationFrame(() => {
+      this.updateDisplay();
+      this.renderWheels();
+    });
   }
   
   close() {
