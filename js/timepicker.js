@@ -75,39 +75,41 @@ class TimePicker {
       }
     });
 
-    // 步进按钮
+    // 步进按钮：单击单步 + 长按连发（仅 mousedown/touchstart 触发，避免与 click 重复步进）
     this.panel.querySelectorAll('.stp-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const unit = btn.dataset.unit;
-        const dir = parseInt(btn.dataset.dir);
-        this._step(unit, dir);
-      });
+      const unit = btn.dataset.unit;
+      const dir = parseInt(btn.dataset.dir);
       let timer = null;
+      const clearTimers = () => { clearInterval(timer); clearTimeout(timer); timer = null; };
+      const startHold = () => {
+        clearTimers();
+        this._step(unit, dir);
+        timer = setTimeout(() => {
+          timer = setInterval(() => this._step(unit, dir), 80);
+        }, 400);
+      };
       btn.addEventListener('mousedown', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        const unit = btn.dataset.unit;
-        const dir = parseInt(btn.dataset.dir);
-        this._step(unit, dir);
-        timer = setTimeout(() => {
-          timer = setInterval(() => this._step(unit, dir), 80);
-        }, 400);
+        startHold();
       });
-      btn.addEventListener('mouseup', () => { clearInterval(timer); clearTimeout(timer); });
-      btn.addEventListener('mouseleave', () => { clearInterval(timer); clearTimeout(timer); });
+      btn.addEventListener('mouseup', clearTimers);
+      btn.addEventListener('mouseleave', clearTimers);
       btn.addEventListener('touchstart', (e) => {
         e.stopPropagation();
         e.preventDefault();
-        const unit = btn.dataset.unit;
-        const dir = parseInt(btn.dataset.dir);
-        this._step(unit, dir);
-        timer = setTimeout(() => {
-          timer = setInterval(() => this._step(unit, dir), 80);
-        }, 400);
+        startHold();
       }, { passive: false });
-      btn.addEventListener('touchend', () => { clearInterval(timer); clearTimeout(timer); });
-      btn.addEventListener('touchcancel', () => { clearInterval(timer); clearTimeout(timer); });
+      btn.addEventListener('touchend', clearTimers);
+      btn.addEventListener('touchcancel', clearTimers);
+      // 键盘可访问：Enter / 空格 单步
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          clearTimers();
+          this._step(unit, dir);
+        }
+      });
     });
 
     // 点击数字直接输入
