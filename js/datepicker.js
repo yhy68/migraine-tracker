@@ -61,11 +61,6 @@ class DatePicker {
       <div class="date-picker-days"></div>
       <div class="date-picker-footer">
         <button class="date-picker-quick-btn" data-quick="today">今天</button>
-        <button class="date-picker-quick-btn" data-quick="yesterday">昨天</button>
-        <button class="date-picker-quick-btn" data-quick="week-start">本周一</button>
-        <button class="date-picker-quick-btn" data-quick="week-end">本周末</button>
-        <button class="date-picker-quick-btn" data-quick="last-week">上周</button>
-        <button class="date-picker-quick-btn" data-quick="last-month">上月</button>
       </div>
     `;
     

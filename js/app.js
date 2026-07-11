@@ -352,7 +352,6 @@ const App = (() => {
       id: 'end-date',
       value: endDate,
       min: startDate,
-      max: new Date().toISOString().split('T')[0],
       placeholder: '选择结束日期',
       onChange: (val) => {
         if (datePickers.start && datePickers.start.getValue() && datePickers.start.getValue() > val) {
