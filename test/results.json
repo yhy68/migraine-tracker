@@ -1,8 +1,8 @@
 {
-  "passed": 42,
+  "passed": 47,
   "failed": 0,
   "skipped": 0,
-  "total": 42,
+  "total": 47,
   "tests": [
     {
       "group": "Storage 数据层",
@@ -131,8 +131,38 @@
       "error": ""
     },
     {
+      "group": "DatePicker 日期选择器",
+      "name": "【根因】isDateDisabled 在 min=当天时不误禁本地当天(时区安全)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "DatePicker 日期选择器",
+      "name": "【回归】结束日期 min=max=今天 时今天仍可选(修复“结束时间选不了”)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "DatePicker 日期选择器",
+      "name": "【回归】DatePicker 点击输入框展开后不被 focus 事件立即关闭",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "DatePicker 日期选择器",
+      "name": "【回归】TimePicker 点击输入框展开后不被 focus 事件立即关闭",
+      "pass": true,
+      "error": ""
+    },
+    {
       "group": "App 核心逻辑",
       "name": "boot: 渲染记录表单与 Tab",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "【集成】记录表单中结束日期面板可正常展开(结束时间可选)",
       "pass": true,
       "error": ""
     },

@@ -338,8 +338,12 @@ const App = (() => {
       max: new Date().toISOString().split('T')[0],
       placeholder: '选择开始日期',
       onChange: (val) => {
-        if (datePickers.end && datePickers.end.getValue() && datePickers.end.getValue() < val) {
-          datePickers.end.setValue(val);
+        if (datePickers.end) {
+          // 结束日期最早不能早于开始日期：跟随更新 min
+          datePickers.end.setMin(val);
+          if (datePickers.end.getValue() && datePickers.end.getValue() < val) {
+            datePickers.end.setValue(val);
+          }
         }
       }
     });

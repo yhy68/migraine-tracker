@@ -67,7 +67,13 @@ class TimePicker {
   setupEvents() {
     // 输入框点击展开/收起
     this.input.addEventListener('click', () => this.toggle());
-    this.input.addEventListener('focus', () => this.open());
+    // 键盘可访问：Tab 聚焦后按 Enter / 空格 展开
+    this.input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        this.toggle();
+      }
+    });
 
     // 步进按钮
     this.panel.querySelectorAll('.stp-btn').forEach(btn => {

@@ -137,8 +137,11 @@ class DatePicker {
   }
   
   isDateDisabled(date) {
-    if (this.min && date < new Date(this.min)) return true;
-    if (this.max && date > new Date(this.max)) return true;
+    // 用本地日期字符串比较，避免 new Date('YYYY-MM-DD') 被当作 UTC 午夜
+    // 与本地午夜比较时因时区偏移导致边界日期（如 min=今天的当天）被误判禁用。
+    const ds = this.formatDate(date);
+    if (this.min && ds < this.min) return true;
+    if (this.max && ds > this.max) return true;
     return false;
   }
   
@@ -279,8 +282,14 @@ class DatePicker {
   
   setupEvents() {
     this.input.addEventListener('click', () => this.toggle());
-    this.input.addEventListener('focus', () => this.open());
-    
+    // 键盘可访问：Tab 聚焦后按 Enter / 空格 / ↓ 打开日历
+    this.input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        this.open();
+      }
+    });
+
     this.calendar.addEventListener('click', (e) => {
       const target = e.target;
       
