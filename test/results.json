@@ -1,0 +1,260 @@
+{
+  "passed": 42,
+  "failed": 0,
+  "skipped": 0,
+  "total": 42,
+  "tests": [
+    {
+      "group": "Storage 数据层",
+      "name": "默认 token 经 XOR 解码后应为 github_pat_ 开头",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "addRecord 生成 id/version/时间戳并落库、标记 dirty",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "updateRecord 合并字段并刷新 updatedAt",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "deleteRecord 移除记录、记录 deletedId、标记 dirty",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "validateRecord 丢弃无效记录并转义 notes/药名",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "validateRecord 截断超长 notes(>5000)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "中文/emoji 经 base64 往返不丢失",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "syncData 拉取远端+合并+推送+清除 deletedIds",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "syncData 处理 409 冲突重试后成功",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "backgroundSync 仅 dirty 时推送远端",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "exportJSON / exportExcel 不抛异常",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "Storage 数据层",
+      "name": "mergeRecords 冲突: 本地较新覆盖远端(经 sync 验证)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "TimePicker 时间选择器",
+      "name": "构造解析 HH:MM",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "TimePicker 时间选择器",
+      "name": "步进循环 23+1=0 / 59+1=0 / 0-1=23",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "TimePicker 时间选择器",
+      "name": "setValue / getValue",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "TimePicker 时间选择器",
+      "name": "此刻按钮写入当前时间",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "TimePicker 时间选择器",
+      "name": "onChange 在更新时触发",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "DatePicker 日期选择器",
+      "name": "快捷选择 今天/昨天",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "DatePicker 日期选择器",
+      "name": "min/max 边界禁用",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "DatePicker 日期选择器",
+      "name": "navigateDay 不越过 min/max",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "DatePicker 日期选择器",
+      "name": "formatDate 输出 YYYY-MM-DD",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "boot: 渲染记录表单与 Tab",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "submitRecord 缺疼痛程度 -> 拦截不保存",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "submitRecord 正常保存并产生本地记录+触发同步",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "submitRecord 备注 XSS 被转义存储",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "保存后若用户已在历史页则不强制切回记录页",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "历史记录按 startTime 倒序排列",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "筛选: 最近7/30/90天",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "搜索: 备注/药名命中",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "分页: 每页5条多页翻页",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "批量选择与删除",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "单条删除走 confirm 并删除",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "编辑回填: 疼痛程度/备注回填正确",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "【缺陷检测】编辑后发作日期/时间应保留原值(不被重置为今天)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "主题切换 toggleTheme 改变 data-theme",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "App 核心逻辑",
+      "name": "隐私声明可关闭并持久化",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "UI / CSS 一致性",
+      "name": "TimePicker 引用的 CSS 类均存在于样式表",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "UI / CSS 一致性",
+      "name": "DatePicker 引用的 CSS 类均存在于样式表",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "UI / CSS 一致性",
+      "name": "时间选择器与日期选择器输入框尺寸/圆角一致(风格统一)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "UI / CSS 一致性",
+      "name": "【清理】timepicker.js 未使用但样式表残留旧滚轮设计 CSS(死代码)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "UI / CSS 一致性",
+      "name": "点击输入框展开面板(panel 默认隐藏, .show 后显示)",
+      "pass": true,
+      "error": ""
+    },
+    {
+      "group": "网络 / 同步真实性",
+      "name": "(网络) 用当前 token 真实访问 GitHub API 验证有效性(沙箱可能无外网)",
+      "pass": true,
+      "error": ""
+    }
+  ]
+}

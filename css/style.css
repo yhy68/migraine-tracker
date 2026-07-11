@@ -1158,11 +1158,6 @@ textarea:focus { border-color: var(--c-blue); outline: none; box-shadow: 0 0 0 3
     transition: width var(--transition-normal), max-width var(--transition-normal);
   }
 
-  .time-picker-display {
-    font-size: 28px;
-    transition: font-size var(--transition-normal);
-  }
-
   .history-controls { 
     flex-direction: column; 
     align-items: stretch; 
@@ -1339,11 +1334,6 @@ textarea:focus { border-color: var(--c-blue); outline: none; box-shadow: 0 0 0 3
     transition: width var(--transition-normal);
   }
   
-  .time-picker-display {
-    font-size: 32px;
-    transition: font-size var(--transition-normal);
-  }
-  
   .record-card { 
     padding: 16px; 
     transition: padding var(--transition-normal);
@@ -1466,11 +1456,6 @@ textarea:focus { border-color: var(--c-blue); outline: none; box-shadow: 0 0 0 3
   .time-picker-panel {
     width: 400px;
     transition: width var(--transition-normal);
-  }
-  
-  .time-picker-display {
-    font-size: 36px;
-    transition: font-size var(--transition-normal);
   }
   
   .record-card { 
@@ -1692,111 +1677,6 @@ body, .card, input, select, textarea, button {
   visibility: visible;
   transform: translateY(0);
 }
-.time-picker-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-.time-picker-ampm {
-  display: flex;
-  background: var(--bg-input);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-}
-.time-picker-ampm-btn {
-  padding: 6px 16px;
-  border: none;
-  border-radius: var(--radius-xs);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.time-picker-ampm-btn.active {
-  background: var(--c-blue);
-  color: #fff;
-}
-.time-picker-ampm-btn:hover:not(.active) { color: var(--text-dark); }
-.time-picker-display {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text-dark);
-  font-family: var(--font-mono);
-  letter-spacing: 2px;
-}
-.time-picker-wheels {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-.time-picker-wheel {
-  width: 70px;
-  height: 140px;
-  overflow: hidden;
-  position: relative;
-  border-radius: var(--radius-sm);
-  background: var(--bg-input);
-}
-.time-picker-wheel-inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: transform 0.2s ease;
-}
-.time-picker-wheel-item {
-  padding: 0;
-  height: 36px;
-  line-height: 36px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: all 0.15s;
-  user-select: none;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.time-picker-wheel-item:hover {
-  color: var(--c-blue-deep);
-  background: var(--c-blue-pale);
-}
-.time-picker-wheel-item.selected {
-  color: var(--c-blue-deep);
-  font-weight: 700;
-  font-size: 16px;
-}
-.time-picker-wheel-marker {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 36px;
-  transform: translateY(-50%);
-  border-top: 2px solid var(--c-blue);
-  border-bottom: 2px solid var(--c-blue);
-  pointer-events: none;
-  box-sizing: border-box;
-}
-.time-picker-wheel-marker::before,
-.time-picker-wheel-marker::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 8px;
-  background: rgba(100,170,210,0.1);
-}
-.time-picker-wheel-marker::before { left: 0; }
-.time-picker-wheel-marker::after { right: 0; }
 .time-picker-footer {
   display: flex;
   gap: 6px;
@@ -1824,16 +1704,6 @@ body, .card, input, select, textarea, button {
   color: var(--c-blue-deep);
 }
 .time-picker-quick-btn:active { transform: scale(0.98); }
-.time-picker-wheel {
-  touch-action: none;
-  user-select: none;
-}
-.time-picker-wheel::-webkit-scrollbar {
-  display: none;
-}
-.time-picker-wheel-inner {
-  will-change: transform;
-}
 
 /* ===== DatePicker Component ===== */
 .date-picker-wrapper {

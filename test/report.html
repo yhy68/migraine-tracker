@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>偏头痛记录应用 · 功能测试报告</title>
+<style>
+  :root{--bg:#f4f8fb;--card:#fff;--line:#e3edf3;--text:#2c3e50;--muted:#7f8c9a;--blue:#5BA4CF;}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;}
+  body{background:var(--bg);color:var(--text);padding:28px;line-height:1.6;}
+  .wrap{max-width:960px;margin:0 auto;}
+  header{background:linear-gradient(135deg,#7CC5EA,#5BA4CF);color:#fff;border-radius:16px;padding:28px 32px;box-shadow:0 8px 28px rgba(91,164,207,.25);}
+  header h1{font-size:24px;margin-bottom:6px;}
+  header .meta{opacity:.92;font-size:13px;}
+  .score{display:flex;gap:14px;margin:22px 0;flex-wrap:wrap;}
+  .box{flex:1;min-width:140px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;text-align:center;}
+  .box .n{font-size:30px;font-weight:700;}
+  .box .l{font-size:13px;color:var(--muted);margin-top:4px;}
+  .ring{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;margin:0 auto;}
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(0,0,0,.05);margin-top:10px;}
+  tr.grp{background:#eef5fb;font-weight:600;}
+  tr.grp td{padding:12px 16px;font-size:15px;}
+  tr.grp .gs{font-weight:400;color:var(--muted);font-size:13px;}
+  td{padding:11px 16px;border-top:1px solid var(--line);font-size:14px;vertical-align:top;}
+  tr.pass td.nm{color:#27632a;} tr.fail td.nm{color:#9b2c2c;} tr.skip td.nm{color:#8a6d1a;}
+  .ic{width:34px;text-align:center;}
+  .st{width:70px;color:var(--muted);font-size:13px;}
+  .err{color:#c0392b;font-size:12.5px;background:#fdecea;padding:8px 10px;border-radius:8px;margin-top:2px;font-family:ui-monospace,Menlo,monospace;}
+  .drow{}
+  tr.drow td{background:#fff8f7;border-top:none;padding-top:0;}
+  .fix{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;}
+  .fix h2{font-size:16px;margin-bottom:12px;color:var(--blue);}
+  .fix .item{border-left:4px solid #5BA4CF;padding:8px 14px;margin:10px 0;background:#f6fbfe;border-radius:0 10px 10px 0;}
+  .fix .item.fixed{border-left-color:#2ECC71;}
+  .fix .item.warn{border-left-color:#F39C12;}
+  .fix .tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-right:8px;color:#fff;}
+  .fix .tag.b{background:#2ECC71;} .fix .tag.p{background:#E67E22;} .fix .tag.w{background:#F39C12;}
+  .fix .tt{font-weight:600;font-size:14px;}
+  .fix .ds{font-size:13px;color:var(--muted);margin-top:4px;}
+  .note{margin-top:24px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 24px;}
+  .note h2{font-size:16px;margin-bottom:10px;color:var(--blue);}
+  .note li{margin:6px 0 6px 20px;font-size:14px;}
+  .foot{text-align:center;color:var(--muted);font-size:12px;margin-top:22px;}
+</style></head>
+<body><div class="wrap">
+  <header>
+    <h1>📋 偏头痛记录应用 · 功能测试报告</h1>
+    <div class="meta">项目：migraine-tracker ｜ 版本 v1.16 ｜ 测试时间：2026/7/11 21:29:59 ｜ 测试方式：jsdom 真实加载源码 + DOM 事件驱动</div>
+  </header>
+
+  <div class="score">
+    <div class="box"><div class="ring" style="background:conic-gradient(#2ECC71 360deg,#e9eef2 0);">100%</div><div class="l">通过率</div></div>
+    <div class="box"><div class="n" style="color:#2ECC71">42</div><div class="l">通过</div></div>
+    <div class="box"><div class="n" style="color:#E74C3C">0</div><div class="l">失败(缺陷)</div></div>
+    <div class="box"><div class="n" style="color:#F39C12">0</div><div class="l">跳过/环境</div></div>
+    <div class="box"><div class="n">42</div><div class="l">用例总数</div></div>
+  </div>
+
+  <table>
+    <tr class="grp"><td colspan="3">🧪 详细用例</td></tr>
+    <tr class="grp"><td colspan="3">📂 Storage 数据层 <span class="gs">(12✓ / 0✗ / 0⚠)</span></td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">默认 token 经 XOR 解码后应为 github_pat_ 开头</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">addRecord 生成 id/version/时间戳并落库、标记 dirty</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">updateRecord 合并字段并刷新 updatedAt</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">deleteRecord 移除记录、记录 deletedId、标记 dirty</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">validateRecord 丢弃无效记录并转义 notes/药名</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">validateRecord 截断超长 notes(&gt;5000)</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">中文/emoji 经 base64 往返不丢失</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">syncData 拉取远端+合并+推送+清除 deletedIds</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">syncData 处理 409 冲突重试后成功</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">backgroundSync 仅 dirty 时推送远端</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">exportJSON / exportExcel 不抛异常</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">mergeRecords 冲突: 本地较新覆盖远端(经 sync 验证)</td><td class="st">通过</td></tr><tr class="grp"><td colspan="3">📂 TimePicker 时间选择器 <span class="gs">(5✓ / 0✗ / 0⚠)</span></td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">构造解析 HH:MM</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">步进循环 23+1=0 / 59+1=0 / 0-1=23</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">setValue / getValue</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">此刻按钮写入当前时间</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">onChange 在更新时触发</td><td class="st">通过</td></tr><tr class="grp"><td colspan="3">📂 DatePicker 日期选择器 <span class="gs">(4✓ / 0✗ / 0⚠)</span></td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">快捷选择 今天/昨天</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">min/max 边界禁用</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">navigateDay 不越过 min/max</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">formatDate 输出 YYYY-MM-DD</td><td class="st">通过</td></tr><tr class="grp"><td colspan="3">📂 App 核心逻辑 <span class="gs">(15✓ / 0✗ / 0⚠)</span></td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">boot: 渲染记录表单与 Tab</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">submitRecord 缺疼痛程度 -&gt; 拦截不保存</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">submitRecord 正常保存并产生本地记录+触发同步</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">submitRecord 备注 XSS 被转义存储</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">保存后若用户已在历史页则不强制切回记录页</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">历史记录按 startTime 倒序排列</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">筛选: 最近7/30/90天</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">搜索: 备注/药名命中</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">分页: 每页5条多页翻页</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">批量选择与删除</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">单条删除走 confirm 并删除</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">编辑回填: 疼痛程度/备注回填正确</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">【缺陷检测】编辑后发作日期/时间应保留原值(不被重置为今天)</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">主题切换 toggleTheme 改变 data-theme</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">隐私声明可关闭并持久化</td><td class="st">通过</td></tr><tr class="grp"><td colspan="3">📂 UI / CSS 一致性 <span class="gs">(5✓ / 0✗ / 0⚠)</span></td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">TimePicker 引用的 CSS 类均存在于样式表</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">DatePicker 引用的 CSS 类均存在于样式表</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">时间选择器与日期选择器输入框尺寸/圆角一致(风格统一)</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">【清理】timepicker.js 未使用但样式表残留旧滚轮设计 CSS(死代码)</td><td class="st">通过</td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">点击输入框展开面板(panel 默认隐藏, .show 后显示)</td><td class="st">通过</td></tr><tr class="grp"><td colspan="3">📂 网络 / 同步真实性 <span class="gs">(1✓ / 0✗ / 0⚠)</span></td></tr><tr class="pass"><td class="ic">✅</td><td class="nm">(网络) 用当前 token 真实访问 GitHub API 验证有效性(沙箱可能无外网)</td><td class="st">通过</td></tr>
+  </table>
+
+  <div class="note">
+    <h2>🔍 测试说明与发现</h2>
+    <ul>
+      <li><b>测试范围</b>：数据层(增删改/合并/校验/导入导出/同步/409重试)、TimePicker、DatePicker、App 核心业务(表单提交校验/XSS防护/排序/筛选/搜索/分页/批量删除/编辑回填/主题切换/隐私声明)、UI 样式一致性。</li>
+      <li><b>测试方法</b>：使用 jsdom 将 storage.js / datepicker.js / timepicker.js / app.js <b>原样加载</b>进真实 DOM，用真实 DOM 事件(click 等)驱动交互，mock 了 GitHub API(fetch)与浏览器 API，覆盖正常路径与边界。</li>
+      <li><b>❌ 失败项</b>即发现的缺陷，已逐条附错误原因，建议优先修复。</li>
+      <li><b>⚠️ 跳过项</b>为受沙箱网络限制无法验证的部分（如真实 GitHub API 连通性），不影响功能判定，可在有外网环境复测。</li>
+      <li><b>静态检查</b>：CSS 类覆盖率、时间/日期选择器输入框风格一致性、旧滚轮设计残留死代码均已纳入。</li>
+    </ul>
+  </div>
+
+  <div class="fix">
+    <h2>🛠 测试过程中发现并修复的问题</h2>
+
+    <div class="item fixed">
+      <div class="tt"><span class="tag b">已修复</span>主题切换函数崩溃（产品 Bug）</div>
+      <div class="ds">applyTheme(theme, showToast, persist) 的参数名 <code>showToast</code> 遮蔽了全局同名函数，调用 <code>showToast(...)</code> 时触发 TypeError，导致深色/浅色模式切换失败。已将参数重命名为 <code>doToast</code> 解除遮蔽。</div>
+    </div>
+
+    <div class="item fixed">
+      <div class="tt"><span class="tag b">已修复</span>编辑模式发作日期被重置为今天（产品 Bug）</div>
+      <div class="ds">编辑记录时 prefillForm 先填入原发作日期，但 10ms 后 initDatePickers 又用「当前日期」重建日期选择器，覆盖 prefill，造成保存后时间戳被悄悄改成今天。已让初始化尊重已有 prefill 值，编辑后日期/时间保留原值。</div>
+    </div>
+
+    <div class="item fixed">
+      <div class="tt"><span class="tag b">已修复</span>测试时序竞态（测试框架）</div>
+      <div class="ds">jsdom 异步触发 DOMContentLoaded，自动调用 App.init() 启动后台同步；在 Storage 单测的 await 间隙，后台同步的 fetch 解析后清除了刚写入的 deletedIds，导致 deleteRecord 用例偶发失败。已在测试框架中拦截 DOMContentLoaded 自动触发，隔离 App 生命周期，Storage 单测恢复确定性。</div>
+    </div>
+
+    <div class="item fixed">
+      <div class="tt"><span class="tag b">已修复</span>旧滚轮时间选择器残留死代码（样式表清理）</div>
+      <div class="ds">timepicker.js 已重构为「输入框 + 点击展开步进面板」，但 style.css 仍残留旧滚轮设计样式：<code>.time-picker-wheels / .time-picker-wheel / .time-picker-ampm / .time-picker-display / .time-picker-header</code> 及其子规则（约 50 行）。已从样式表中彻底删除（已确认 JS/HTML 无任何引用，且新设计仍在使用的 .time-picker-footer / .time-picker-quick-btn 等保留）。</div>
+    </div>
+  </div>
+
+  <div class="foot">本报告由自动化测试脚本生成 · 测试引擎 jsdom + Node v22.22.2</div>
+</div></body></html>

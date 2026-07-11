@@ -148,8 +148,8 @@ const App = (() => {
     }, 60000);
   }
   
-  function applyTheme(theme, showToast, persist = true) {
-    if (showToast === undefined) showToast = true;
+  function applyTheme(theme, notify, persist = true) {
+    if (notify === undefined) notify = true;
     if (theme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
       document.body.setAttribute('data-theme', 'dark');
@@ -160,7 +160,7 @@ const App = (() => {
     if (persist) {
       localStorage.setItem('theme', theme);
     }
-    if (showToast) {
+    if (notify) {
       showToast(`已切换到${theme === 'dark' ? '深色' : '浅色'}模式`, 'success');
     }
     updateThemeHint();
@@ -398,9 +398,22 @@ const App = (() => {
   }
 
   function renderRecordForm(container) {
-    const now = new Date();
-    const start = splitDateTime(now);
-    const end = splitDateTime(new Date(now.getTime() + 3600000));
+    let start, end;
+    if (editingId) {
+      const rec = Storage.getLocalRecords().find(r => r.id === editingId);
+      if (rec) {
+        const sd = new Date(rec.startTime);
+        const ed = rec.endTime ? new Date(rec.endTime) : new Date(sd.getTime() + 3600000);
+        const pad = n => String(n).padStart(2, '0');
+        start = { date: `${sd.getFullYear()}-${pad(sd.getMonth()+1)}-${pad(sd.getDate())}`, time: `${pad(sd.getHours())}:${pad(sd.getMinutes())}` };
+        end = { date: `${ed.getFullYear()}-${pad(ed.getMonth()+1)}-${pad(ed.getDate())}`, time: `${pad(ed.getHours())}:${pad(ed.getMinutes())}` };
+      }
+    }
+    if (!start) {
+      const now = new Date();
+      start = splitDateTime(now);
+      end = splitDateTime(new Date(now.getTime() + 3600000));
+    }
 
     container.innerHTML = `
       <div class="card">
