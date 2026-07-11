@@ -5,495 +5,159 @@ class TimePicker {
     this.onChange = options.onChange || (() => {});
     this.placeholder = options.placeholder || '选择时间';
     this.container = null;
-    this.input = null;
-    this.panel = null;
-    this.isOpen = false;
-    this.hour = 12;
-    this.minute = 0;
-    this.is24Hour = true;
-    
-    this.isDragging = false;
-    this.dragWheel = null;
-    this.startY = 0;
-    this.currentOffset = 0;
-    this._dragOffset = 0;
-    this.itemHeight = 36;
-    this.wheelHeight = 140;
-    
+    this.hourEl = null;
+    this.minEl = null;
+    this.hour = 0;
+    this.min = 0;
+    this._parseValue();
     this.init();
   }
-  
+
   init() {
     this.container = document.createElement('div');
-    this.container.className = 'time-picker-wrapper';
-    
-    this.renderInput();
-    this.renderPanel();
-    
-    this.setupEvents();
+    this.container.className = 'stepper-time-picker';
+    this.render();
   }
-  
-  renderInput() {
-    this.input = document.createElement('input');
-    this.input.type = 'text';
-    this.input.className = 'time-picker-input';
-    this.input.placeholder = this.placeholder;
-    this.input.value = this.value;
-    this.input.readOnly = true;
-    
-    const icon = document.createElement('span');
-    icon.className = 'time-picker-icon';
-    icon.textContent = '⏰';
-    
-    this.container.appendChild(icon);
-    this.container.appendChild(this.input);
+
+  _parseValue() {
+    if (this.value) {
+      const parts = this.value.split(':');
+      this.hour = parseInt(parts[0]) || 0;
+      this.min = parseInt(parts[1]) || 0;
+    }
   }
-  
-  renderPanel() {
-    this.panel = document.createElement('div');
-    this.panel.className = 'time-picker-panel';
-    
-    this.panel.innerHTML = `
-      <div class="time-picker-header">
-        <div class="time-picker-ampm">
-          <button class="time-picker-ampm-btn" data-ampm="am">上午</button>
-          <button class="time-picker-ampm-btn" data-ampm="pm">下午</button>
+
+  render() {
+    const hPad = String(this.hour).padStart(2, '0');
+    const mPad = String(this.min).padStart(2, '0');
+
+    this.container.innerHTML = `
+      <span class="stp-label">${this.placeholder}</span>
+      <button class="stp-now-btn" data-action="now">此刻</button>
+      <div class="stp-digits">
+        <div class="stp-unit">
+          <button class="stp-btn stp-up" data-unit="hour" data-dir="1">▲</button>
+          <div class="stp-val" data-unit="hour">${hPad}</div>
+          <button class="stp-btn stp-down" data-unit="hour" data-dir="-1">▼</button>
         </div>
-        <div class="time-picker-display">--:--</div>
-      </div>
-      <div class="time-picker-wheels">
-        <div class="time-picker-wheel" data-wheel="hour">
-          <div class="time-picker-wheel-inner"></div>
-          <div class="time-picker-wheel-marker"></div>
+        <span class="stp-colon">:</span>
+        <div class="stp-unit">
+          <button class="stp-btn stp-up" data-unit="min" data-dir="1">▲</button>
+          <div class="stp-val" data-unit="min">${mPad}</div>
+          <button class="stp-btn stp-down" data-unit="min" data-dir="-1">▼</button>
         </div>
-        <div class="time-picker-wheel" data-wheel="minute">
-          <div class="time-picker-wheel-inner"></div>
-          <div class="time-picker-wheel-marker"></div>
-        </div>
-      </div>
-      <div class="time-picker-footer">
-        <button class="time-picker-quick-btn" data-quick="now">现在</button>
-        <button class="time-picker-quick-btn" data-quick="hour">整点</button>
-        <button class="time-picker-quick-btn" data-quick="half">半点</button>
       </div>
     `;
-    
-    this.container.appendChild(this.panel);
-    
-    this.renderWheels();
-    this.updateDisplay();
-  }
-  
-  renderWheels() {
-    this.renderWheel('hour');
-    this.renderWheel('minute');
-  }
-  
-  renderWheel(type) {
-    const inner = this.panel.querySelector(`[data-wheel="${type}"] .time-picker-wheel-inner`);
-    if (!inner) return;
-    
-    let items = [];
-    if (type === 'hour') {
-      for (let i = 0; i < 24; i++) {
-        items.push(i);
-      }
-    } else {
-      for (let i = 0; i < 60; i++) {
-        items.push(i);
-      }
-    }
-    
-    inner.innerHTML = items.map(item => {
-      const display = String(item).padStart(2, '0');
-      const isSelected = type === 'hour' ? item === this.hour : item === this.minute;
-      return `<div class="time-picker-wheel-item ${isSelected ? 'selected' : ''}" data-value="${item}">${display}</div>`;
-    }).join('');
-    
-    // 首次渲染后动态测量实际 item 高度（代替硬编码 36px）
-    if (!this._measuredHeight) {
-      this.measureItemHeight(inner);
-    }
-    
-    this.scrollToSelected(type);
-  }
-  
-  measureItemHeight(inner) {
-    const first = inner.querySelector('.time-picker-wheel-item');
-    if (first) {
-      this.itemHeight = first.offsetHeight || 36;
-      this._measuredHeight = true;
-    }
-  }
-  
 
-  scrollToSelected(type, animate = true) {
-    const inner = this.panel.querySelector(`[data-wheel="${type}"] .time-picker-wheel-inner`);
-    if (!inner) return;
-    
-    const selectedItem = inner.querySelector('.time-picker-wheel-item.selected');
-    if (!selectedItem) return;
-    
-    const offset = selectedItem.offsetTop - (this.wheelHeight / 2) + (this.itemHeight / 2);
-    
-    if (animate) {
-      inner.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)';
-    } else {
-      inner.style.transition = 'none';
-    }
-    inner.style.transform = `translateY(-${offset}px)`;
+    this.hourEl = this.container.querySelector('[data-unit="hour"].stp-val');
+    this.minEl = this.container.querySelector('[data-unit="min"].stp-val');
+
+    this.setupEvents();
   }
-  
-  updateDisplay() {
-    const display = this.panel.querySelector('.time-picker-display');
-    if (!display) return;
-    
-    const h = String(this.hour).padStart(2, '0');
-    const m = String(this.minute).padStart(2, '0');
-    display.textContent = `${h}:${m}`;
-    
-    const ampmBtns = this.panel.querySelectorAll('.time-picker-ampm-btn');
-    if (this.is24Hour) {
-      ampmBtns.forEach(btn => btn.style.display = 'none');
-    } else {
-      ampmBtns.forEach(btn => btn.style.display = 'block');
-      const isPM = this.hour >= 12;
-      ampmBtns[0].classList.toggle('active', !isPM);
-      ampmBtns[1].classList.toggle('active', isPM);
-    }
-  }
-  
-  setupDragEvents() {
-    const wheels = this.panel.querySelectorAll('.time-picker-wheel');
-    
-    wheels.forEach(wheel => {
-      wheel.addEventListener('touchstart', (e) => this.onDragStart(e, wheel));
-      wheel.addEventListener('touchmove', (e) => this.onDragMove(e));
-      wheel.addEventListener('touchend', () => this.onDragEnd());
-      wheel.addEventListener('touchcancel', () => this.onDragEnd());
-      
-      wheel.addEventListener('mousedown', (e) => this.onDragStart(e, wheel));
-      wheel.addEventListener('wheel', (e) => this.onWheel(e, wheel), { passive: false });
+
+  setupEvents() {
+    // 步进按钮
+    this.container.querySelectorAll('.stp-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const unit = btn.dataset.unit;
+        const dir = parseInt(btn.dataset.dir);
+        this._step(unit, dir);
+      });
+      // 按住连发
+      let timer = null;
+      btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        const unit = btn.dataset.unit;
+        const dir = parseInt(btn.dataset.dir);
+        this._step(unit, dir);
+        timer = setTimeout(() => {
+          timer = setInterval(() => this._step(unit, dir), 80);
+        }, 400);
+      });
+      btn.addEventListener('mouseup', () => { clearInterval(timer); clearTimeout(timer); });
+      btn.addEventListener('mouseleave', () => { clearInterval(timer); clearTimeout(timer); });
+      // 触摸长按
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const unit = btn.dataset.unit;
+        const dir = parseInt(btn.dataset.dir);
+        this._step(unit, dir);
+        timer = setTimeout(() => {
+          timer = setInterval(() => this._step(unit, dir), 80);
+        }, 400);
+      }, { passive: false });
+      btn.addEventListener('touchend', () => { clearInterval(timer); clearTimeout(timer); });
+      btn.addEventListener('touchcancel', () => { clearInterval(timer); clearTimeout(timer); });
     });
-  }
-  
-  onWheel(e, wheel) {
-    // 拖拽中忽略 wheel 事件，防止与 touchmove 冲突导致显示不同步
-    if (this.isDragging) return;
-    e.preventDefault();
-    const wheelType = wheel.dataset.wheel;
-    const delta = e.deltaY > 0 ? 1 : -1;
-    
-    if (wheelType === 'hour') {
-      this.changeHour(delta);
-    } else {
-      this.changeMinute(delta);
-    }
-  }
-  
-  onDragStart(e, wheel) {
-    e.preventDefault();
-    if (this.isDragging) return;
-    this.isDragging = true;
-    this._dragMoved = false;
-    this.dragWheel = wheel.dataset.wheel;
-    
-    const point = e.touches ? e.touches[0] : e;
-    this.startY = point.clientY;
-    
-    const inner = wheel.querySelector('.time-picker-wheel-inner');
-    const selectedItem = inner.querySelector('.time-picker-wheel-item.selected');
-    if (selectedItem) {
-      this.currentOffset = selectedItem.offsetTop - (this.wheelHeight / 2) + (this.itemHeight / 2);
-    } else {
-      this.currentOffset = 0;
-    }
-    
-    inner.style.transition = 'none';
-  }
-  
-  onDragMove(e) {
-    if (!this.isDragging || !this.dragWheel) return;
-    e.preventDefault();
-    this._dragMoved = true;
-    
-    const point = e.touches ? e.touches[0] : e;
-    const deltaY = point.clientY - this.startY;
-    
-    const newOffset = this.currentOffset - deltaY;
-    this._dragOffset = newOffset;
-    
-    const inner = this.panel.querySelector(`[data-wheel="${this.dragWheel}"] .time-picker-wheel-inner`);
-    
-    inner.style.transform = `translateY(-${newOffset}px)`;
-    
-    this.updateDisplayFromScroll(newOffset);
-  }
-  
-  updateDisplayFromScroll(offset) {
-    const centerOffset = this.wheelHeight / 2 - this.itemHeight / 2;
-    const relativeOffset = offset + centerOffset;
-    const itemIndex = Math.round(relativeOffset / this.itemHeight);
-    
-    const maxItems = this.dragWheel === 'hour' ? 24 : 60;
-    const clampedIndex = Math.max(0, Math.min(maxItems - 1, itemIndex));
-    
-    if (this.dragWheel === 'hour') {
-      this.hour = clampedIndex;
-    } else {
-      this.minute = clampedIndex;
-    }
-    
-    // 实时更新存储值，防止 open() 被重新调用时回退
-    const h = String(this.hour).padStart(2, '0');
-    const m = String(this.minute).padStart(2, '0');
-    this.value = `${h}:${m}`;
-    this.input.value = this.value;
-    
-    this.updateDisplay();
-    this.updateWheelSelection();
-  }
-  
-  updateWheelSelection() {
-    const wheels = this.panel.querySelectorAll('.time-picker-wheel');
-    wheels.forEach(wheel => {
-      const type = wheel.dataset.wheel;
-      const items = wheel.querySelectorAll('.time-picker-wheel-item');
-      items.forEach((item, index) => {
-        const isSelected = type === 'hour' ? index === this.hour : index === this.minute;
-        item.classList.toggle('selected', isSelected);
+
+    // 点击数字弹出输入
+    this.container.querySelectorAll('.stp-val').forEach(el => {
+      el.addEventListener('click', () => {
+        const unit = el.dataset.unit;
+        const current = unit === 'hour' ? this.hour : this.min;
+        const max = unit === 'hour' ? 23 : 59;
+        const val = prompt(
+          unit === 'hour' ? '输入小时 (0-23)' : '输入分钟 (0-59)',
+          String(current).padStart(2, '0')
+        );
+        if (val !== null) {
+          const num = parseInt(val);
+          if (!isNaN(num) && num >= 0 && num <= max) {
+            if (unit === 'hour') this.hour = num;
+            else this.min = num;
+            this._update();
+          }
+        }
       });
     });
-  }
-  
-  onDragEnd() {
-    if (!this.isDragging || !this.dragWheel) return;
-    
-    const wheelType = this.dragWheel;
-    const offset = this._dragOffset;
-    
-    const centerOffset = this.wheelHeight / 2 - this.itemHeight / 2;
-    const relativeOffset = offset + centerOffset;
-    const itemIndex = Math.round(relativeOffset / this.itemHeight);
-    
-    const maxItems = wheelType === 'hour' ? 24 : 60;
-    const clampedIndex = Math.max(0, Math.min(maxItems - 1, itemIndex));
-    
-    this.isDragging = false;
-    this.dragWheel = null;
-    this._dragMoved = false;
-    
-    this.selectValue(wheelType, clampedIndex);
-  }
-  
-  handleAmpmClick(ampm) {
-    if (ampm === 'pm') {
-      if (this.hour < 12) this.hour += 12;
-    } else {
-      if (this.hour >= 12) this.hour -= 12;
-    }
-    this.updateValue();
-  }
-  
-  handleQuickSelect(type) {
-    const now = new Date();
-    switch (type) {
-      case 'now':
-        this.hour = now.getHours();
-        this.minute = now.getMinutes();
-        break;
-      case 'hour':
-        this.minute = 0;
-        break;
-      case 'half':
-        this.minute = this.minute < 30 ? 30 : 0;
-        if (this.minute === 0) this.changeHour(1);
-        break;
-      case 'quarter':
-        this.minute = Math.floor(this.minute / 15) * 15;
-        break;
-    }
-    this.updateValue();
-  }
-  
-  selectValue(wheel, value) {
-    if (wheel === 'hour') {
-      this.hour = value;
-    } else {
-      this.minute = value;
-    }
-    this.updateValue();
-  }
-  
-  changeHour(delta) {
-    this.hour = (this.hour + delta + 24) % 24;
-    this.updateValue();
-  }
-  
-  changeMinute(delta) {
-    let newMinute = this.minute + delta;
-    let hourDelta = 0;
-    
-    if (newMinute >= 60) {
-      hourDelta = Math.floor(newMinute / 60);
-      newMinute = newMinute % 60;
-    } else if (newMinute < 0) {
-      hourDelta = -Math.floor(Math.abs(newMinute) / 60) - 1;
-      newMinute = (60 + (newMinute % 60)) % 60;
-    }
-    
-    this.minute = newMinute;
-    this.hour = (this.hour + hourDelta + 24) % 24;
-    this.updateValue();
-  }
-  
-  updateValue() {
-    const h = String(this.hour).padStart(2, '0');
-    const m = String(this.minute).padStart(2, '0');
-    this.value = `${h}:${m}`;
-    this.input.value = this.value;
-    this.updateDisplay();
-    // 拖拽中不重绘 DOM，避免与 touchmove 冲突
-    if (!this.isDragging) {
-      this.renderWheels();
-    }
-    this.onChange(this.value);
-  }
-  
-  toggle() {
-    if (this.isOpen) {
-      this.close();
-    } else {
-      this.open();
-    }
-  }
-  
-  open() {
-    if (this.isOpen) return;
-    if (this.value) {
-      const [h, m] = this.value.split(':').map(Number);
-      if (!isNaN(h) && !isNaN(m)) {
-        this.hour = h;
-        this.minute = m;
-      }
-    } else {
+
+    // 此刻按钮
+    this.container.querySelector('[data-action="now"]').addEventListener('click', (e) => {
+      e.preventDefault();
       const now = new Date();
       this.hour = now.getHours();
-      this.minute = now.getMinutes();
-    }
-    this.panel.classList.add('show');
-    this.isOpen = true;
-    
-    this._measuredHeight = false;
-    
-    requestAnimationFrame(() => {
-      this.updateDisplay();
-      this.renderWheels();
+      this.min = now.getMinutes();
+      this._update();
     });
   }
-  
-  close() {
-    this.panel.classList.remove('show');
-    this.isOpen = false;
-  }
-  
-  setValue(value) {
-    this.value = value;
-    this.input.value = value;
-    if (value) {
-      const [h, m] = value.split(':').map(Number);
-      if (!isNaN(h) && !isNaN(m)) {
-        this.hour = h;
-        this.minute = m;
-      }
+
+  _step(unit, dir) {
+    if (unit === 'hour') {
+      this.hour = (this.hour + dir + 24) % 24;
+    } else {
+      this.min = (this.min + dir + 60) % 60;
     }
+    this._update();
   }
-  
+
+  _update() {
+    const h = String(this.hour).padStart(2, '0');
+    const m = String(this.min).padStart(2, '0');
+    this.value = `${h}:${m}`;
+    if (this.hourEl) this.hourEl.textContent = h;
+    if (this.minEl) this.minEl.textContent = m;
+    this.onChange(this.value);
+  }
+
   getValue() {
     return this.value;
   }
-  
+
+  setValue(value) {
+    this.value = value;
+    this._parseValue();
+    const h = String(this.hour).padStart(2, '0');
+    const m = String(this.min).padStart(2, '0');
+    if (this.hourEl) this.hourEl.textContent = h;
+    if (this.minEl) this.minEl.textContent = m;
+  }
+
   getElement() {
     return this.container;
   }
-  
+
   destroy() {
-    if (this.container) {
-      this.container.remove();
-    }
-    document.removeEventListener('click', this.globalClickHandler);
-    document.removeEventListener('keydown', this.globalKeyHandler);
-    document.removeEventListener('mousemove', this.globalMouseMoveHandler);
-    document.removeEventListener('mouseup', this.globalMouseUpHandler);
-  }
-  
-  setupEvents() {
-    this.input.addEventListener('click', () => this.toggle());
-    this.input.addEventListener('focus', () => this.open());
-    
-    this.panel.addEventListener('click', (e) => {
-      const target = e.target;
-      
-      // 拖拽操作后忽略 click 事件，防止松手时误点击导致回弹
-      if (this._dragMoved) {
-        this._dragMoved = false;
-        return;
-      }
-      
-      if (target.classList.contains('time-picker-ampm-btn')) {
-        this.handleAmpmClick(target.dataset.ampm);
-      } else if (target.classList.contains('time-picker-wheel-item')) {
-        const wheel = target.closest('[data-wheel]').dataset.wheel;
-        this.selectValue(wheel, parseInt(target.dataset.value));
-      } else if (target.classList.contains('time-picker-quick-btn')) {
-        this.handleQuickSelect(target.dataset.quick);
-      }
-    });
-    
-    this.globalClickHandler = (e) => {
-      if (!this.container.contains(e.target) && this.isOpen) {
-        this.close();
-      }
-    };
-    
-    this.globalKeyHandler = (e) => {
-      if (!this.isOpen) return;
-      
-      switch (e.key) {
-        case 'Escape':
-          this.close();
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          this.changeMinute(-1);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          this.changeMinute(1);
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          this.changeHour(-1);
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          this.changeHour(1);
-          break;
-        case 'Enter':
-          e.preventDefault();
-          this.close();
-          break;
-      }
-    };
-    
-    this.globalMouseMoveHandler = (e) => this.onDragMove(e);
-    this.globalMouseUpHandler = () => this.onDragEnd();
-    
-    document.addEventListener('click', this.globalClickHandler);
-    document.addEventListener('keydown', this.globalKeyHandler);
-    document.addEventListener('mousemove', this.globalMouseMoveHandler);
-    document.addEventListener('mouseup', this.globalMouseUpHandler);
-    
-    this.setupDragEvents();
+    if (this.container) this.container.remove();
   }
 }
